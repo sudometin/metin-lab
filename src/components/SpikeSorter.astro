@@ -1,0 +1,240 @@
+---
+// Spike Sorter: assign noisy extracellular waveforms to one of three units.
+const units = [
+  { n: 1, name: 'Unit 1', desc: 'narrow · fast-spiking', color: '#6EE7C8' },
+  { n: 2, name: 'Unit 2', desc: 'wide · regular-spiking', color: '#F5B454' },
+  { n: 3, name: 'Unit 3', desc: 'positive-first · axonal', color: '#9FB8FF' },
+];
+---
+<div class="panel sorter" id="spike-sorter">
+  <div class="sorter__scope">
+    <div class="sorter__row mono">
+      <span>ch 07 · 30 kHz · <span data-ss-count>0</span>/20 spikes</span>
+      <span>acc <span class="mint" data-ss-acc>–</span> · <span data-ss-time>0.0</span>s</span>
+    </div>
+    <svg viewBox="0 0 600 260" preserveAspectRatio="none" class="scope" role="img" aria-label="Oscilloscope showing the current spike waveform">
+      <g stroke="#151B21" stroke-width="1">
+        <path d="M0 65H600M0 130H600M0 195H600M100 0V260M200 0V260M300 0V260M400 0V260M500 0V260"></path>
+      </g>
+      <g data-ss-trails></g>
+      <path data-ss-wave stroke="#E6EAEE" stroke-width="2.4" fill="none" stroke-linejoin="round" vector-effect="non-scaling-stroke"></path>
+    </svg>
+    <div class="sorter__row mono"><span>−0.5 ms</span><span>persistence: last 12 sorted</span><span>+1.1 ms</span></div>
+  </div>
+
+  <div class="sorter__side">
+    <div data-ss-intro>
+      <h3>Sort the spikes.</h3>
+      <p>An electrode picks up several neurons at once. Each one has its own waveform shape. Assign 20 spikes to their units as fast and as accurately as you can. Use the buttons, or press <kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd>.</p>
+    </div>
+    <div class="units">
+      {units.map((u) => (
+        <button type="button" class="unit" data-ss-unit={u.n} style={`--c: ${u.color}`} disabled>
+          <svg viewBox="0 0 96 48" aria-hidden="true"><path data-ss-tpl={u.n} stroke={u.color} stroke-width="2" fill="none" vector-effect="non-scaling-stroke"></path></svg>
+          <span><b>{u.n} · {u.name}</b><small class="mono">{u.desc}</small></span>
+        </button>
+      ))}
+    </div>
+    <div class="sorter__foot">
+      <span class="mono msg" role="status" data-ss-msg>Ready when you are.</span>
+      <button type="button" class="btn btn-primary" data-ss-start>Start recording</button>
+    </div>
+
+    <div class="result" data-ss-result hidden>
+      <span class="mono mint" style="font-size: 13px">// sorting complete</span>
+      <h3 class="result__title"><span data-ss-final-acc>0</span>% accurate</h3>
+      <p class="mono muted" data-ss-final-meta></p>
+      <p data-ss-verdict></p>
+      <figure class="feat">
+        <svg viewBox="0 0 360 220" role="img" aria-label="Feature space: trough depth against spike width, colored by your labels">
+          <path d="M40 10V190H350" stroke="#2A333D" fill="none"></path>
+          <text x="195" y="212" fill="#8B96A3" font-size="10" font-family="JetBrains Mono" text-anchor="middle">trough→peak width (ms)</text>
+          <text x="12" y="100" fill="#8B96A3" font-size="10" font-family="JetBrains Mono" text-anchor="middle" transform="rotate(-90 12 100)">trough depth</text>
+          <g data-ss-points></g>
+        </svg>
+        <figcaption class="mono muted">your labels in feature space · ringed = mis-sorted</figcaption>
+      </figure>
+    </div>
+  </div>
+</div>
+
+<style>
+  .sorter { display: flex; flex-wrap: wrap; }
+  .sorter__scope { flex: 999 1 520px; min-width: 0; padding: 20px 24px; border-right: 1px solid var(--line); background: #080A0D; display: flex; flex-direction: column; gap: 10px; }
+  .sorter__row { display: flex; justify-content: space-between; gap: 12px; font-size: 12px; color: var(--muted); }
+  .scope { display: block; width: 100%; flex: 1 1 300px; min-height: 300px; }
+  @media (max-width: 640px) { .scope { min-height: 200px; flex-basis: 200px; } .sorter__scope { padding: 16px; } }
+  .sorter__side { flex: 1 1 340px; min-width: 0; padding: 24px; display: flex; flex-direction: column; gap: 16px; }
+  .sorter__side h3 { margin: 0 0 8px; font-family: var(--font-display); font-size: 20px; font-weight: 500; }
+  .sorter__side p { margin: 0; color: var(--text-2); font-size: 15px; }
+  kbd { font-family: var(--font-mono); font-size: 12px; padding: 1px 6px; border: 1px solid var(--line-3); border-bottom-width: 2px; border-radius: 5px; color: var(--text); }
+  .units { display: flex; flex-direction: column; gap: 10px; }
+  .unit { display: flex; align-items: center; gap: 14px; min-height: 60px; padding: 8px 14px; border-radius: 12px; border: 1px solid var(--line-3); background: var(--surface-2); color: var(--text); text-align: left; transition: border-color .1s, transform .08s; }
+  .unit:not(:disabled):hover { border-color: var(--c); }
+  .unit:not(:disabled):active { transform: scale(.98); }
+  .unit:disabled { cursor: default; opacity: .7; }
+  .unit svg { width: 96px; height: 44px; flex: 0 0 96px; }
+  .unit span { display: flex; flex-direction: column; }
+  .unit b { font-family: var(--font-display); font-weight: 500; color: var(--c); }
+  .unit small { font-size: 11px; color: var(--muted); }
+  .unit.flash-ok { border-color: var(--mint); background: var(--mint-bg); }
+  .unit.flash-bad { border-color: var(--pink); background: #1E1218; }
+  .sorter__foot { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px; }
+  .msg { font-size: 13px; color: var(--muted); }
+  .result { display: flex; flex-direction: column; gap: 10px; }
+  .result__title { margin: 0 !important; font-size: 32px !important; font-weight: 700 !important; letter-spacing: -0.02em; }
+  .feat { margin: 4px 0 0; }
+  .feat svg { width: 100%; height: auto; display: block; background: var(--surface-2); border: 1px solid var(--line); border-radius: 10px; }
+  .feat figcaption { font-size: 11px; margin-top: 6px; }
+  .mint { color: var(--mint); }
+</style>
+
+<script>
+  import { click, thud, soundOn } from '../lib/audio';
+
+  const root = document.getElementById('spike-sorter');
+  if (root) {
+    const $ = <T extends Element = HTMLElement>(s: string) => root.querySelector(s) as unknown as T;
+    const COLORS = ['', '#6EE7C8', '#F5B454', '#9FB8FF'];
+    const S = 48; // samples per waveform (1.6 ms at 30 kHz)
+    const gauss = (t: number, mu: number, sd: number) => Math.exp(-((t - mu) ** 2) / (2 * sd * sd));
+    const TEMPLATES: Record<number, (t: number) => number> = {
+      1: (t) => -1.0 * gauss(t, 15, 1.8) + 0.38 * gauss(t, 21, 3.2),
+      2: (t) => -0.62 * gauss(t, 15, 3.4) + 0.24 * gauss(t, 29, 6.5),
+      3: (t) => 0.42 * gauss(t, 11, 2.2) - 0.78 * gauss(t, 17, 2.6) + 0.16 * gauss(t, 28, 5),
+    };
+    const tpl = (u: number) => Array.from({ length: S }, (_, i) => TEMPLATES[u](i));
+
+    const path = (w: number[], width: number, height: number, mid: number, scale: number) =>
+      w.map((v, i) => `${i ? 'L' : 'M'}${((i / (S - 1)) * width).toFixed(1)} ${(mid - v * scale).toFixed(1)}`).join(' ');
+
+    // template thumbnails
+    [1, 2, 3].forEach((u) => $(`[data-ss-tpl="${u}"]`).setAttribute('d', path(tpl(u), 96, 48, 26, 20)));
+
+    function sample(u: number) {
+      const amp = 0.85 + Math.random() * 0.3;
+      const shift = (Math.random() - 0.5) * 1.6;
+      const ph = [Math.random() * 6, Math.random() * 6];
+      return Array.from({ length: S }, (_, i) =>
+        TEMPLATES[u](i - shift) * amp + 0.07 * Math.sin(i * 0.35 + ph[0]) + 0.05 * Math.sin(i * 0.9 + ph[1]) + (Math.random() - 0.5) * 0.11,
+      );
+    }
+    function features(w: number[]) {
+      let ti = 0;
+      for (let i = 1; i < S; i++) if (w[i] < w[ti]) ti = i;
+      let pi = ti;
+      for (let i = ti; i < S; i++) if (w[i] > w[pi]) pi = i;
+      return { depth: -w[ti], width: (pi - ti) / 30 };
+    }
+
+    const wave = $('[data-ss-wave]');
+    const trails = $('[data-ss-trails]');
+    const buttons = [...root.querySelectorAll<HTMLButtonElement>('[data-ss-unit]')];
+    let running = false;
+    let trial = 0, correct = 0, t0 = 0, shownAt = 0;
+    let current = { u: 1, w: [] as number[] };
+    const log: { w: number[]; truth: number; label: number; rt: number }[] = [];
+    let timer = 0;
+
+    function next() {
+      const u = 1 + Math.floor(Math.random() * 3);
+      current = { u, w: sample(u) };
+      wave.setAttribute('d', path(current.w, 600, 260, 120, 105));
+      shownAt = performance.now();
+      if (soundOn()) click(0, 0.3, 1800 + u * 500);
+    }
+    function addTrail(w: number[], label: number) {
+      const p = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      p.setAttribute('d', path(w, 600, 260, 120, 105));
+      p.setAttribute('stroke', COLORS[label]);
+      p.setAttribute('stroke-opacity', '0.28');
+      p.setAttribute('stroke-width', '1.4');
+      p.setAttribute('fill', 'none');
+      p.setAttribute('vector-effect', 'non-scaling-stroke');
+      trails.appendChild(p);
+      while (trails.childNodes.length > 12) trails.removeChild(trails.firstChild!);
+    }
+    function hud() {
+      $('[data-ss-count]').textContent = String(trial);
+      $('[data-ss-acc]').textContent = trial ? `${Math.round((correct / trial) * 100)}%` : '–';
+    }
+
+    function start() {
+      running = true; trial = 0; correct = 0; log.length = 0;
+      trails.innerHTML = '';
+      buttons.forEach((b) => (b.disabled = false));
+      $('[data-ss-intro]').hidden = true;
+      $('[data-ss-result]').hidden = true;
+      ($('[data-ss-start]') as HTMLButtonElement).hidden = true;
+      $('[data-ss-msg]').textContent = 'Recording… sort!';
+      t0 = performance.now();
+      clearInterval(timer);
+      timer = window.setInterval(() => ($('[data-ss-time]').textContent = ((performance.now() - t0) / 1000).toFixed(1)), 100);
+      hud();
+      next();
+      buttons[0].focus({ preventScroll: true });
+    }
+
+    function sort(label: number) {
+      if (!running) return;
+      const ok = label === current.u;
+      trial++;
+      if (ok) correct++;
+      log.push({ w: current.w, truth: current.u, label, rt: performance.now() - shownAt });
+      addTrail(current.w, label);
+      const b = buttons[label - 1];
+      b.classList.add(ok ? 'flash-ok' : 'flash-bad');
+      setTimeout(() => b.classList.remove('flash-ok', 'flash-bad'), 180);
+      if (soundOn() && !ok) thud();
+      $('[data-ss-msg]').textContent = ok ? `✓ unit ${label}` : `✗ that was unit ${current.u}`;
+      ($('[data-ss-msg]') as HTMLElement).style.color = ok ? '#6EE7C8' : '#F59EC0';
+      (window as any).metinLab && ((window as any).metinLab.spikes += 1);
+      hud();
+      if (trial >= 20) finish(); else next();
+    }
+
+    function finish() {
+      running = false;
+      clearInterval(timer);
+      buttons.forEach((b) => (b.disabled = true));
+      wave.setAttribute('d', '');
+      const secs = (performance.now() - t0) / 1000;
+      const acc = Math.round((correct / 20) * 100);
+      const rt = log.reduce((s, x) => s + x.rt, 0) / log.length;
+      $('[data-ss-final-acc]').textContent = String(acc);
+      $('[data-ss-final-meta]').textContent = `${secs.toFixed(1)} s total · ${Math.round(rt)} ms per spike · ${(20 / secs).toFixed(1)} spikes/s`;
+      $('[data-ss-verdict]').textContent =
+        acc === 100 ? 'Perfect isolation. Kilosort is nervous.' :
+        acc >= 90 ? 'Excellent curation. Your clusters would pass review.' :
+        acc >= 75 ? 'Solid. A few units are bleeding into each other.' :
+        'Heavy cluster overlap. Maybe let the algorithm take a first pass.';
+      // feature scatter
+      const pts = $('[data-ss-points]');
+      pts.innerHTML = '';
+      const fs = log.map((x) => ({ ...features(x.w), ...x }));
+      const maxW = Math.max(...fs.map((f) => f.width), 0.4), maxD = Math.max(...fs.map((f) => f.depth), 1);
+      for (const f of fs) {
+        const cx = 40 + (f.width / maxW) * 300, cy = 190 - (f.depth / maxD) * 170;
+        const c = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        c.setAttribute('cx', cx.toFixed(1)); c.setAttribute('cy', cy.toFixed(1)); c.setAttribute('r', '5');
+        c.setAttribute('fill', COLORS[f.label]);
+        if (f.label !== f.truth) { c.setAttribute('stroke', '#F59EC0'); c.setAttribute('stroke-width', '2.5'); }
+        pts.appendChild(c);
+      }
+      $('[data-ss-result]').hidden = false;
+      const startBtn = $('[data-ss-start]') as HTMLButtonElement;
+      startBtn.hidden = false;
+      startBtn.textContent = 'Record again';
+      $('[data-ss-msg]').textContent = '';
+    }
+
+    $('[data-ss-start]').addEventListener('click', start);
+    buttons.forEach((b) => b.addEventListener('click', () => sort(Number(b.dataset.ssUnit))));
+    window.addEventListener('keydown', (e) => {
+      if (!running || e.metaKey || e.ctrlKey || e.altKey) return;
+      const el = document.activeElement as HTMLElement | null;
+      if (el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA')) return;
+      if (e.key === '1' || e.key === '2' || e.key === '3') { e.preventDefault(); sort(Number(e.key)); }
+    });
+  }
+</script>

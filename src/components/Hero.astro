@@ -1,0 +1,182 @@
+---
+// Hero: headline, typed line and a live (synthetic) olfactory bulb signal panel
+---
+<section class="container hero">
+  <div class="hero__copy">
+    <p class="mono hero__kicker">// computational neuroscience · neuroengineering</p>
+    <h1 class="hero__title">From the nose<br />to the neuron.</h1>
+    <p class="mono hero__typed" aria-label="Currently decoding odors, spikes and signals">
+      <span class="mint">❯</span> currently decoding: <span id="typed" class="amber" aria-hidden="true"></span><span id="caret" class="caret" aria-hidden="true"></span>
+    </p>
+    <p class="hero__lede">
+      I'm Metin. I study how the brain encodes smell, build olfactory neural interfaces, and write about the papers, signals and tools that keep me curious.
+    </p>
+    <div class="hero__cta">
+      <a class="btn btn-primary" href="/notes/">Read the notes
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4"></path></svg>
+      </a>
+      <a class="btn" href="#tools">Play with a neuron</a>
+    </div>
+  </div>
+
+  <figure class="panel signal">
+    <div class="signal__bar mono">
+      <span>OB · LFP ch03 · 1 kHz <span class="faint">(synthetic)</span></span>
+      <button id="live-btn" class="live-btn mono" aria-label="Pause the signal animation">
+        <span id="live-dot" class="live-dot"></span><span id="live-label">live</span>
+      </button>
+    </div>
+    <svg viewBox="0 0 1200 160" preserveAspectRatio="none" class="signal__lfp" role="img" aria-label="Animated synthetic local field potential trace">
+      <path d="M0 80H1200" stroke="#1C232B" fill="none"></path>
+      <path id="lfp" stroke="#6EE7C8" stroke-width="2" fill="none" vector-effect="non-scaling-stroke"></path>
+    </svg>
+    <div class="signal__label mono">respiration</div>
+    <svg viewBox="0 0 1200 60" preserveAspectRatio="none" class="signal__resp" aria-hidden="true">
+      <path id="resp" stroke="#F5B454" stroke-width="1.6" fill="none" vector-effect="non-scaling-stroke"></path>
+    </svg>
+    <div class="signal__label mono">mitral cell raster · 10 units</div>
+    <svg id="raster" viewBox="0 0 1200 130" preserveAspectRatio="none" class="signal__raster" aria-hidden="true"></svg>
+  </figure>
+</section>
+
+<section aria-label="Research focus" class="focus">
+  <div class="container focus__inner mono">
+    <span class="mint">focus:</span>
+    <span>olfactory coding</span><span class="sep">·</span>
+    <span>neural interfaces</span><span class="sep">·</span>
+    <span>LFP / EEG signal processing</span><span class="sep">·</span>
+    <span>deep learning on neural data</span><span class="sep">·</span>
+    <span>teaching Java &amp; C</span>
+  </div>
+</section>
+
+<style>
+  .hero { padding-block: clamp(56px, 9vw, 112px) 72px; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 440px), 1fr)); gap: 56px; align-items: center; }
+  .hero__copy { display: flex; flex-direction: column; gap: 22px; }
+  .hero__kicker { margin: 0; font-size: 13px; color: var(--mint); letter-spacing: .04em; }
+  .hero__title { margin: 0; font-family: var(--font-display); font-weight: 700; font-size: clamp(42px, 6vw, 72px); line-height: 1.02; letter-spacing: -0.035em; }
+  .hero__typed { margin: 0; font-size: 15px; color: var(--muted); min-height: 24px; }
+  .hero__lede { margin: 0; font-size: 18px; color: var(--text-2); max-width: 520px; }
+  .hero__cta { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 6px; }
+  .mint { color: var(--mint); } .amber { color: var(--amber); } .faint { color: var(--faint); }
+  .caret { display: inline-block; width: 8px; height: 17px; margin-left: 2px; vertical-align: -3px; background: var(--mint); animation: blink 1s steps(1) infinite; }
+  @keyframes blink { 50% { opacity: 0; } }
+
+  .signal { margin: 0; background: #0F1318; }
+  .signal__bar { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 12px 16px; border-bottom: 1px solid var(--line); font-size: 12px; color: var(--muted); }
+  .live-btn { display: inline-flex; align-items: center; gap: 6px; min-height: 32px; padding: 0 10px; border-radius: 8px; border: 1px solid var(--line-3); background: transparent; color: var(--text); font-size: 12px; }
+  .live-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--mint); }
+  .signal svg { display: block; width: 100%; }
+  .signal__lfp { height: 150px; }
+  .signal__resp { height: 44px; }
+  .signal__raster { height: 110px; margin-bottom: 12px; }
+  .signal__label { padding: 6px 16px 0; font-size: 11px; color: var(--muted); }
+
+  .focus { border-block: 1px solid var(--line); background: var(--bg-2); }
+  .focus__inner { display: flex; flex-wrap: wrap; gap: 10px 28px; padding-block: 20px; font-size: 13px; color: var(--muted); }
+  .sep { color: #3A4450; }
+  @media (prefers-reduced-motion: reduce) { .caret { animation: none; } }
+</style>
+
+<script>
+  const w = window as any;
+  w.metinLab = w.metinLab || { spikes: 0 };
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // ---- synthetic LFP + respiration ----
+  const lfpEl = document.getElementById('lfp');
+  const respEl = document.getElementById('resp');
+  const btn = document.getElementById('live-btn') as HTMLButtonElement;
+  const dot = document.getElementById('live-dot') as HTMLElement;
+  const label = document.getElementById('live-label') as HTMLElement;
+  let phase = 0;
+  let live = !reduce;
+
+  function lfpPath(p: number) {
+    let d = '';
+    for (let i = 0; i <= 300; i++) {
+      const t = (i + p) * 0.05;
+      const env = Math.max(0, Math.sin(t * 0.55));
+      const gamma = Math.sin(t * 9.3) * env * env * 16;
+      const theta = Math.sin(t * 1.1) * 18 + Math.sin(t * 0.37 + 1) * 8;
+      const noise = Math.sin(t * 23.7) * 2.5 + Math.sin(t * 41.3 + 2) * 1.6;
+      const y = 80 - (theta + gamma + noise) * 1.25;
+      d += `${i ? 'L' : 'M'}${i * 4} ${y.toFixed(1)} `;
+    }
+    return d;
+  }
+  function respPath(p: number) {
+    let d = '';
+    for (let i = 0; i <= 150; i++) {
+      const t = (i * 2 + p) * 0.05;
+      d += `${i ? 'L' : 'M'}${i * 8} ${(30 - Math.sin(t * 0.55) * 20).toFixed(1)} `;
+    }
+    return d;
+  }
+  function draw() {
+    lfpEl?.setAttribute('d', lfpPath(phase));
+    respEl?.setAttribute('d', respPath(phase));
+  }
+  function setLive(on: boolean) {
+    live = on;
+    label.textContent = on ? 'live' : 'paused';
+    dot.style.background = on ? '#6EE7C8' : '#5B6672';
+    btn.setAttribute('aria-label', on ? 'Pause the signal animation' : 'Resume the signal animation');
+  }
+  btn?.addEventListener('click', () => setLive(!live));
+  setLive(live);
+  draw();
+  let last = 0;
+  function frame(ts: number) {
+    if (live && ts - last > 50) {
+      last = ts;
+      phase++;
+      w.metinLab.spikes += 3;
+      draw();
+    }
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+
+  // ---- static raster, locked to the sniff cycle ----
+  const raster = document.getElementById('raster');
+  if (raster) {
+    let seed = 7;
+    const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+    for (let r = 0; r < 10; r++) {
+      const y0 = 6 + r * 12;
+      const pref = rnd() * 3.14;
+      let d = '';
+      for (let x = 0; x < 1200; x += 6) {
+        const drive = Math.max(0, Math.sin(x * 0.0115 + pref));
+        if (rnd() < 0.02 + drive * drive * 0.22) d += `M${x} ${y0}V${y0 + 8} `;
+      }
+      const p = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      p.setAttribute('d', d);
+      p.setAttribute('stroke', r % 3 === 0 ? '#F5B454' : '#6EE7C8');
+      p.setAttribute('stroke-width', '2');
+      p.setAttribute('fill', 'none');
+      p.setAttribute('vector-effect', 'non-scaling-stroke');
+      raster.appendChild(p);
+    }
+  }
+
+  // ---- typed line ----
+  const typed = document.getElementById('typed');
+  const words = ['odors from LFP', 'spike trains', 'gamma bursts', 'one sniff at a time', 'the olfactory code'];
+  if (typed) {
+    if (reduce) {
+      typed.textContent = words[0];
+    } else {
+      let tw = 0;
+      const cyc = 46;
+      setInterval(() => {
+        const word = words[Math.floor(tw / cyc) % words.length];
+        const pos = tw % cyc;
+        const n = pos < 30 ? Math.min(pos, word.length) : Math.max(0, word.length - (pos - 30) * 2);
+        typed.textContent = word.slice(0, n);
+        tw++;
+      }, 90);
+    }
+  }
+</script>

@@ -1,0 +1,51 @@
+---
+// tmux-style status line, sticky at the bottom of every page
+---
+<div class="status mono" role="contentinfo" aria-label="Status line">
+  <span class="status__brand">metin.lab</span>
+  <a href="/notes/">0:notes</a>
+  <a href="/#tools">1:tools</a>
+  <a class="wide" href="/#play">2:play</a>
+  <a class="wide" href="/#terminal">3:shell</a>
+  <span class="status__fill"></span>
+  <button type="button" class="status__btn wide" data-sound aria-pressed="false">sound: off</button>
+  <button type="button" class="status__btn wide" data-help>? keys</button>
+  <span class="status__meta">spikes rendered <span id="spike-count" class="amber">0</span></span>
+  <span class="status__clock">IST <span id="clock">--:--:--</span></span>
+</div>
+
+<style>
+  .status { position: sticky; bottom: 0; z-index: 20; display: flex; flex-wrap: wrap; align-items: stretch; font-size: 12px; background: #0D1115; border-top: 1px solid var(--line); }
+  .status > * { padding: 7px 12px; }
+  .status a { color: var(--text-2); }
+  .status a:hover { color: var(--text); background: var(--line); }
+  .status__brand { background: var(--mint); color: var(--mint-ink); font-weight: 500; padding-inline: 14px; }
+  .status__btn { border: none; background: transparent; color: var(--muted); font-family: var(--font-mono); font-size: 12px; }
+  .status__btn:hover { color: var(--text); background: var(--line); }
+  .status__btn[aria-pressed='true'] { color: var(--mint); }
+  .status__fill { flex: 1 1 auto; padding: 0; }
+  .status__meta { color: var(--muted); }
+  .amber { color: var(--amber); }
+  @media (max-width: 640px) { .status__meta, .status .wide { display: none; } .status > * { padding-inline: 9px; } }
+  .status__clock { background: var(--line); color: var(--text); padding-inline: 14px; }
+</style>
+
+<script>
+  (window as any).metinLab ??= { spikes: 0 };
+  import { soundOn, setSound, click } from '../lib/audio';
+  const sb = document.querySelector('[data-sound]') as HTMLButtonElement;
+  const paintSound = () => { const on = soundOn(); sb.textContent = `sound: ${on ? 'on' : 'off'}`; sb.setAttribute('aria-pressed', String(on)); };
+  paintSound();
+  window.addEventListener('metinlab:sound', paintSound);
+  sb.addEventListener('click', () => { const on = !soundOn(); setSound(on); if (on) click(0, 0.4); });
+  document.querySelector('[data-help]')?.addEventListener('click', () => (document.getElementById('keys') as HTMLDialogElement)?.showModal());
+  const clock = document.getElementById('clock');
+  const counter = document.getElementById('spike-count');
+  const fmt = new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Istanbul', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+  const tick = () => {
+    if (clock) clock.textContent = fmt.format(new Date());
+    if (counter) counter.textContent = String((window as any).metinLab?.spikes ?? 0);
+  };
+  tick();
+  setInterval(tick, 1000);
+</script>

@@ -1,0 +1,226 @@
+---
+// Force-directed graph of notes ↔ tags, concepts and authors. Spikes travel along the edges.
+import type { GraphNode, GraphLink } from '../lib/notes';
+
+interface Props { nodes: GraphNode[]; links: GraphLink[]; height?: number }
+const { nodes, links, height = 560 } = Astro.props;
+const legend = [
+  { type: 'note', label: 'note', color: '#6EE7C8' },
+  { type: 'tag', label: 'topic', color: '#F5B454' },
+  { type: 'concept', label: 'concept', color: '#9FB8FF' },
+  { type: 'author', label: 'author', color: '#8B96A3' },
+];
+---
+<div class="kg" data-kg style={`--h: ${height}px`}>
+  <div class="kg__bar">
+    <label class="kg__search mono">
+      <span class="mint">grep</span>
+      <input type="search" data-kg-search placeholder="filter nodes… (e.g. decoding, Mainen)" aria-label="Filter graph nodes" />
+    </label>
+    <div class="kg__legend mono">
+      {legend.map((l) => <span><i style={`background:${l.color}`}></i>{l.label}</span>)}
+    </div>
+  </div>
+  <div class="kg__stage">
+    <canvas data-kg-canvas role="img" aria-label={`Knowledge graph with ${nodes.length} nodes and ${links.length} connections. A text list follows.`}></canvas>
+    <div class="kg__tip mono" data-kg-tip hidden></div>
+    <div class="kg__hint mono">drag nodes · hover to trace · click a note to open</div>
+  </div>
+  <details class="kg__list">
+    <summary class="mono">show as list</summary>
+    <ul>
+      {nodes.filter((n) => n.type === 'note').map((n) => {
+        const neigh = links.filter((l) => l.source === n.id).map((l) => nodes.find((x) => x.id === l.target)?.label).join(' · ');
+        return <li><a href={n.href}>{n.label}</a> <span class="muted mono">→ {neigh}</span></li>;
+      })}
+    </ul>
+  </details>
+  <script type="application/json" data-kg-data set:html={JSON.stringify({ nodes, links })} />
+</div>
+
+<style>
+  .kg { border: 1px solid var(--line-2); border-radius: 16px; background: #0B0E12; overflow: hidden; }
+  .kg__bar { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px 24px; padding: 12px 16px; border-bottom: 1px solid var(--line); background: #0D1115; }
+  .kg__search { display: flex; align-items: center; gap: 10px; flex: 1 1 280px; font-size: 13px; }
+  .kg__search input { flex: 1; min-width: 0; min-height: 36px; padding: 0 12px; border-radius: 8px; border: 1px solid var(--line-3); background: var(--surface-2); color: var(--text); font: inherit; }
+  .kg__legend { display: flex; flex-wrap: wrap; gap: 16px; font-size: 12px; color: var(--muted); }
+  .kg__legend i { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 6px; }
+  .kg__stage { position: relative; height: var(--h); }
+  .kg__stage canvas { display: block; width: 100%; height: 100%; cursor: grab; touch-action: none; }
+  .kg__tip { position: absolute; pointer-events: none; padding: 6px 10px; border-radius: 8px; background: #141A20; border: 1px solid var(--line-3); font-size: 12px; color: var(--text); max-width: 260px; }
+  .kg__hint { position: absolute; left: 16px; bottom: 12px; font-size: 11px; color: var(--faint); pointer-events: none; }
+  .kg__list { border-top: 1px solid var(--line); padding: 12px 16px; }
+  .kg__list summary { cursor: pointer; font-size: 12px; color: var(--muted); min-height: 32px; display: flex; align-items: center; }
+  .kg__list ul { margin: 8px 0 4px; padding-left: 18px; display: grid; gap: 6px; font-size: 14px; }
+  .kg__list .mono { font-size: 12px; }
+  .mint { color: var(--mint); }
+</style>
+
+<script>
+  type N = { id: string; label: string; type: string; href?: string; x: number; y: number; vx: number; vy: number; r: number; fixed?: boolean };
+  const COLORS: Record<string, string> = { note: '#6EE7C8', tag: '#F5B454', concept: '#9FB8FF', author: '#8B96A3' };
+  const RADIUS: Record<string, number> = { note: 9, tag: 7, concept: 5.5, author: 4.5 };
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  document.querySelectorAll<HTMLElement>('[data-kg]').forEach((root) => {
+    const data = JSON.parse(root.querySelector('[data-kg-data]')!.textContent!);
+    const canvas = root.querySelector('[data-kg-canvas]') as HTMLCanvasElement;
+    const tip = root.querySelector('[data-kg-tip]') as HTMLElement;
+    const search = root.querySelector('[data-kg-search]') as HTMLInputElement;
+    const g = canvas.getContext('2d')!;
+    let W = 0, H = 0, dpr = 1;
+
+    const nodes: N[] = data.nodes.map((n: any, i: number) => {
+      const a = (i / data.nodes.length) * Math.PI * 2;
+      const rad = n.type === 'note' ? 80 : 200;
+      return { ...n, x: Math.cos(a) * rad, y: Math.sin(a) * rad, vx: 0, vy: 0, r: RADIUS[n.type] };
+    });
+    const byId = new Map(nodes.map((n) => [n.id, n]));
+    const links = data.links.map((l: any) => ({ s: byId.get(l.source)!, t: byId.get(l.target)! })).filter((l: any) => l.s && l.t);
+    const neighbors = new Map<N, Set<N>>();
+    nodes.forEach((n) => neighbors.set(n, new Set()));
+    links.forEach((l: any) => { neighbors.get(l.s)!.add(l.t); neighbors.get(l.t)!.add(l.s); });
+
+    let alpha = 1;
+    let hover: N | null = null;
+    let drag: N | null = null;
+    let moved = false;
+    let query = '';
+    const params = new URLSearchParams(location.search);
+    if (params.get('focus')) { query = params.get('focus')!.toLowerCase(); search.value = params.get('focus')!; }
+
+    function resize() {
+      const r = canvas.getBoundingClientRect();
+      dpr = Math.min(2, window.devicePixelRatio || 1);
+      W = r.width; H = r.height;
+      canvas.width = W * dpr; canvas.height = H * dpr;
+      g.setTransform(dpr, 0, 0, dpr, 0, 0);
+      alpha = Math.max(alpha, 0.3);
+    }
+    new ResizeObserver(resize).observe(canvas);
+    resize();
+
+    function step() {
+      const k = Math.min(W, H) < 500 ? 0.6 : 1;
+      for (let i = 0; i < nodes.length; i++) {
+        const a = nodes[i];
+        for (let j = i + 1; j < nodes.length; j++) {
+          const b = nodes[j];
+          let dx = a.x - b.x, dy = a.y - b.y;
+          let d2 = dx * dx + dy * dy || 0.01;
+          const f = (2600 * k * alpha) / Math.max(d2, 400);
+          const d = Math.sqrt(d2);
+          dx /= d; dy /= d;
+          a.vx += dx * f; a.vy += dy * f; b.vx -= dx * f; b.vy -= dy * f;
+        }
+      }
+      for (const l of links) {
+        const dx = l.t.x - l.s.x, dy = l.t.y - l.s.y;
+        const d = Math.sqrt(dx * dx + dy * dy) || 1;
+        const L = (l.t.type === 'author' ? 70 : 110) * k;
+        const f = ((d - L) / d) * 0.06 * alpha;
+        l.s.vx += dx * f; l.s.vy += dy * f; l.t.vx -= dx * f; l.t.vy -= dy * f;
+      }
+      for (const n of nodes) {
+        n.vx -= n.x * 0.003 * alpha; n.vy -= n.y * 0.005 * alpha;
+        if (n === drag) { n.vx = n.vy = 0; continue; }
+        n.vx *= 0.82; n.vy *= 0.82;
+        n.x += n.vx; n.y += n.vy;
+        n.x = Math.max(-W / 2 + 20, Math.min(W / 2 - 20, n.x));
+        n.y = Math.max(-H / 2 + 20, Math.min(H / 2 - 20, n.y));
+      }
+      alpha = Math.max(0.02, alpha * 0.99);
+    }
+
+    // spikes travelling along edges
+    type P = { l: any; t: number; dir: number };
+    let pulses: P[] = [];
+    let lastSpawn = 0;
+
+    const matches = (n: N) => !query || n.label.toLowerCase().includes(query);
+    function draw(ts: number) {
+      g.clearRect(0, 0, W, H);
+      g.save();
+      g.translate(W / 2, H / 2);
+      const focus = hover;
+      const lit = focus ? neighbors.get(focus)! : null;
+      for (const l of links) {
+        const on = focus && (l.s === focus || l.t === focus);
+        const qOn = query && (matches(l.s) || matches(l.t));
+        g.strokeStyle = on ? 'rgba(110,231,200,0.7)' : qOn ? 'rgba(110,231,200,0.3)' : 'rgba(139,150,163,0.16)';
+        g.lineWidth = on ? 1.6 : 1;
+        g.beginPath(); g.moveTo(l.s.x, l.s.y); g.lineTo(l.t.x, l.t.y); g.stroke();
+      }
+      if (!reduce) {
+        if (ts - lastSpawn > 220 && links.length) {
+          lastSpawn = ts;
+          const pool = focus ? links.filter((l: any) => l.s === focus || l.t === focus) : links;
+          pulses.push({ l: pool[Math.floor(Math.random() * pool.length)], t: 0, dir: Math.random() < 0.5 ? 1 : -1 });
+          { const w = window as any; w.metinLab ??= { spikes: 0 }; w.metinLab.spikes += 1; }
+        }
+        pulses = pulses.filter((p) => (p.t += 0.018) < 1);
+        for (const p of pulses) {
+          const t = p.dir > 0 ? p.t : 1 - p.t;
+          const x = p.l.s.x + (p.l.t.x - p.l.s.x) * t, y = p.l.s.y + (p.l.t.y - p.l.s.y) * t;
+          g.fillStyle = '#F5B454';
+          g.shadowColor = '#F5B454'; g.shadowBlur = 10;
+          g.beginPath(); g.arc(x, y, 2.2, 0, Math.PI * 2); g.fill();
+          g.shadowBlur = 0;
+        }
+      }
+      for (const n of nodes) {
+        const dim = (focus && n !== focus && !lit!.has(n)) || (query && !matches(n));
+        g.globalAlpha = dim ? 0.18 : 1;
+        g.fillStyle = COLORS[n.type];
+        if (n === focus || (query && matches(n))) { g.shadowColor = COLORS[n.type]; g.shadowBlur = 16; }
+        g.beginPath(); g.arc(n.x, n.y, n.r, 0, Math.PI * 2); g.fill();
+        g.shadowBlur = 0;
+        if (n.type === 'note' || n.type === 'tag' || n === focus || (lit && lit.has(n)) || (query && matches(n))) {
+          g.font = `${n.type === 'note' ? 500 : 400} ${n.type === 'note' ? 12 : 11}px "JetBrains Mono", monospace`;
+          g.fillStyle = n.type === 'note' ? '#E6EAEE' : '#A7B1BC';
+          const label = n.label.length > 34 ? n.label.slice(0, 32) + '…' : n.label;
+          g.fillText(label, n.x + n.r + 5, n.y + 4);
+        }
+        g.globalAlpha = 1;
+      }
+      g.restore();
+    }
+
+    function loop(ts: number) {
+      if (alpha > 0.021 || drag) step();
+      draw(ts);
+      requestAnimationFrame(loop);
+    }
+    requestAnimationFrame(loop);
+
+    const at = (e: PointerEvent) => {
+      const r = canvas.getBoundingClientRect();
+      const x = e.clientX - r.left - W / 2, y = e.clientY - r.top - H / 2;
+      let best: N | null = null, bd = 18 * 18;
+      for (const n of nodes) { const d = (n.x - x) ** 2 + (n.y - y) ** 2; if (d < bd) { bd = d; best = n; } }
+      return { x, y, n: best };
+    };
+    canvas.addEventListener('pointermove', (e) => {
+      const p = at(e);
+      if (drag) { drag.x = p.x; drag.y = p.y; moved = true; alpha = Math.max(alpha, 0.3); return; }
+      hover = p.n;
+      canvas.style.cursor = hover ? (hover.href ? 'pointer' : 'grab') : 'default';
+      if (hover) {
+        tip.hidden = false;
+        tip.textContent = `${hover.type}: ${hover.label}${hover.href ? '  ↵ open' : ''}`;
+        tip.style.left = `${Math.min(W - 200, p.x + W / 2 + 14)}px`;
+        tip.style.top = `${p.y + H / 2 + 14}px`;
+      } else tip.hidden = true;
+    });
+    canvas.addEventListener('pointerleave', () => { hover = null; tip.hidden = true; });
+    canvas.addEventListener('pointerdown', (e) => {
+      const p = at(e);
+      if (p.n) { drag = p.n; moved = false; canvas.setPointerCapture(e.pointerId); canvas.style.cursor = 'grabbing'; }
+    });
+    canvas.addEventListener('pointerup', () => {
+      if (drag && !moved && drag.href) location.href = drag.href;
+      drag = null;
+    });
+    search.addEventListener('input', () => { query = search.value.trim().toLowerCase(); });
+  });
+</script>

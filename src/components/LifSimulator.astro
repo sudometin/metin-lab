@@ -1,0 +1,188 @@
+---
+// Leaky integrate-and-fire neuron, simulated live in the browser (forward Euler, dt = 0.1 ms)
+const sliders = [
+  { id: 'I', label: 'input current I', unit: 'nA', min: 0, max: 4, step: 0.05, value: 2.2 },
+  { id: 'tau', label: 'membrane τ', unit: 'ms', min: 5, max: 40, step: 1, value: 20 },
+  { id: 'th', label: 'threshold V_th', unit: 'mV', min: -62, max: -40, step: 1, value: -54 },
+];
+const stats = [
+  { id: 'rate', label: 'firing rate', unit: 'Hz', accent: true },
+  { id: 'spikes', label: 'spikes / 200 ms', unit: '' },
+  { id: 'rheo', label: 'rheobase', unit: 'nA' },
+  { id: 'isi', label: 'mean ISI', unit: 'ms' },
+];
+---
+<div class="panel lif" id="lif">
+  <div class="lif__head">
+    <div class="lif__title">
+      <span class="badge badge--live">live</span>
+      <h3>Leaky integrate-and-fire neuron</h3>
+    </div>
+    <code class="mono muted">τ·dV/dt = −(V − E_L) + R·I</code>
+  </div>
+  <div class="lif__body">
+    <div class="lif__plot">
+      <svg viewBox="0 0 800 240" preserveAspectRatio="none" role="img" aria-label="Simulated membrane voltage over 200 milliseconds">
+        <path d="M0 230H800" stroke="#1C232B" fill="none"></path>
+        <path data-rest stroke="#1C232B" stroke-dasharray="2 6" fill="none"></path>
+        <path data-th stroke="#F5B454" stroke-dasharray="6 6" stroke-width="1.2" fill="none" vector-effect="non-scaling-stroke"></path>
+        <path data-v stroke="#6EE7C8" stroke-width="1.8" fill="none" stroke-linejoin="round" vector-effect="non-scaling-stroke"></path>
+      </svg>
+      <div class="lif__axis mono"><span>0 ms</span><span>V_m (mV) · dashed = threshold</span><span>200 ms</span></div>
+    </div>
+    <div class="lif__ctrl">
+      {sliders.map((s) => (
+        <div class="slider">
+          <div class="slider__row mono">
+            <label for={`lif-${s.id}`}>{s.label}</label>
+            <span><output data-out={s.id}>{s.value}</output> {s.unit}</span>
+          </div>
+          <input id={`lif-${s.id}`} data-param={s.id} type="range" min={s.min} max={s.max} step={s.step} value={s.value} />
+        </div>
+      ))}
+      <div class="stats">
+        {stats.map((s) => (
+          <div class="stat">
+            <div class="stat__label mono">{s.label}</div>
+            <div class:list={['stat__value', { 'stat__value--accent': s.accent }]}><span data-stat={s.id}>–</span>{s.unit && <small> {s.unit}</small>}</div>
+          </div>
+        ))}
+      </div>
+      <div class="lif__btns">
+        <button type="button" class="btn btn-listen" data-listen aria-pressed="false">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4V5zM16 9a4 4 0 0 1 0 6M19 6a8 8 0 0 1 0 12"></path></svg>
+          <span data-listen-label>Listen</span>
+        </button>
+        <button type="button" class="btn" data-reset>Reset</button>
+      </div>
+      <p class="mono lif__note">Listen plays every spike as a click, like an amplifier on a rig. Drag I up to hear it fire faster.</p>
+    </div>
+  </div>
+</div>
+
+<style>
+  .lif__head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px; padding: 16px 24px; border-bottom: 1px solid var(--line); }
+  .lif__title { display: flex; align-items: center; gap: 12px; }
+  .lif__title h3 { margin: 0; font-family: var(--font-display); font-size: 20px; font-weight: 500; }
+  .lif__head code { font-size: 12px; }
+  .lif__body { display: flex; flex-wrap: wrap; }
+  .lif__plot { flex: 999 1 560px; min-width: 0; padding: 20px 24px; display: flex; flex-direction: column; }
+  .lif__plot svg { display: block; width: 100%; flex: 1 1 260px; min-height: 260px; }
+  .lif__axis { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); margin-top: 6px; }
+  .lif__ctrl { flex: 1 1 300px; min-width: 0; padding: 20px 24px; border-left: 1px solid var(--line); display: flex; flex-direction: column; gap: 20px; }
+  .slider { display: flex; flex-direction: column; gap: 4px; }
+  .slider__row { display: flex; justify-content: space-between; font-size: 13px; }
+  .slider__row label { color: var(--text-2); }
+  .stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .stat { padding: 12px; border: 1px solid var(--line-2); border-radius: 10px; background: var(--surface-2); }
+  .stat__label { font-size: 11px; color: var(--muted); }
+  .stat__value { font-family: var(--font-display); font-size: 26px; font-weight: 500; }
+  .stat__value small { font-size: 14px; color: var(--muted); }
+  .stat__value--accent { color: var(--mint); }
+  .lif__btns { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .btn-listen[aria-pressed='true'] { background: var(--mint-bg); border-color: var(--mint); color: var(--mint); }
+  .lif__note { margin: -8px 0 0; font-size: 11px; color: var(--muted); }
+  .lif__plot :global(.sweep) { stroke: rgba(110,231,200,.35); }
+</style>
+
+<script>
+  import { audio, click } from '../lib/audio';
+  const root = document.getElementById('lif');
+  if (root) {
+    const defaults: Record<string, number> = { I: 2.2, tau: 20, th: -54 };
+    const inputs = root.querySelectorAll<HTMLInputElement>('[data-param]');
+    const q = (sel: string) => root.querySelector(sel) as Element;
+    const yOf = (v: number) => (10 + ((40 - v) / 125) * 220).toFixed(1);
+
+    function simulate(I: number, tau: number, th: number) {
+      const dt = 0.1, T = 200, EL = -70, R = 10, Vr = -75;
+      const spikeTimes: number[] = [];
+      let V = EL, spikes = 0, last: number | null = null, isiSum = 0, isiN = 0;
+      let d = `M0 ${yOf(V)} `;
+      const N = Math.round(T / dt);
+      for (let n = 1; n <= N; n++) {
+        V += (dt * (-(V - EL) + R * I)) / tau;
+        const x = ((n * dt) / T * 800).toFixed(1);
+        if (V >= th) {
+          spikes++;
+          const t = n * dt;
+          if (last !== null) { isiSum += t - last; isiN++; }
+          last = t;
+          spikeTimes.push(t);
+          d += `L${x} ${yOf(th)} L${x} ${yOf(30)} L${x} ${yOf(Vr)} `;
+          V = Vr;
+        } else if (n % 5 === 0) {
+          d += `L${x} ${yOf(V)} `;
+        }
+      }
+      return { d, spikes, times: spikeTimes, rate: Math.round(spikes / (T / 1000)), rheo: ((th - EL) / R).toFixed(2), isi: isiN ? (isiSum / isiN).toFixed(1) : '—', EL };
+    }
+
+    let current: { times: number[] } = { times: [] };
+    function update() {
+      const p: Record<string, number> = {};
+      inputs.forEach((i) => (p[i.dataset.param!] = parseFloat(i.value)));
+      const r = simulate(p.I, p.tau, p.th);
+      current = r;
+      q('[data-v]').setAttribute('d', r.d);
+      q('[data-th]').setAttribute('d', `M0 ${yOf(p.th)}H800`);
+      q('[data-rest]').setAttribute('d', `M0 ${yOf(r.EL)}H800`);
+      q('[data-out="I"]').textContent = p.I.toFixed(2);
+      q('[data-out="tau"]').textContent = String(p.tau);
+      q('[data-out="th"]').textContent = String(p.th);
+      q('[data-stat="rate"]').textContent = String(r.rate);
+      q('[data-stat="spikes"]').textContent = String(r.spikes);
+      q('[data-stat="rheo"]').textContent = r.rheo;
+      q('[data-stat="isi"]').textContent = r.isi;
+    }
+    inputs.forEach((i) => i.addEventListener('input', update));
+    q('[data-reset]').addEventListener('click', () => {
+      inputs.forEach((i) => (i.value = String(defaults[i.dataset.param!])));
+      update();
+    });
+    update();
+
+    // ---- sonification: loop the 200 ms simulation, one click per spike ----
+    const listenBtn = q('[data-listen]') as HTMLButtonElement;
+    const listenLabel = q('[data-listen-label]');
+    const svg = root.querySelector('svg')!;
+    const sweep = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    sweep.setAttribute('class', 'sweep');
+    sweep.setAttribute('stroke-width', '1.5');
+    sweep.setAttribute('vector-effect', 'non-scaling-stroke');
+    svg.appendChild(sweep);
+    let listening = false, nextStart = 0, timer = 0, raf = 0, loopStart = 0;
+    const LOOP = 0.2; // seconds
+    function schedule() {
+      const a = audio();
+      while (nextStart < a.currentTime + 0.25) {
+        for (const t of current.times) click(nextStart + t / 1000, 0.32, 2400);
+        (window as any).metinLab && ((window as any).metinLab.spikes += current.times.length);
+        nextStart += LOOP;
+      }
+    }
+    function drawSweep() {
+      const a = audio();
+      const frac = ((a.currentTime - loopStart) % LOOP) / LOOP;
+      const x = (frac * 800).toFixed(1);
+      sweep.setAttribute('d', `M${x} 0V240`);
+      raf = requestAnimationFrame(drawSweep);
+    }
+    listenBtn.addEventListener('click', () => {
+      listening = !listening;
+      listenBtn.setAttribute('aria-pressed', String(listening));
+      listenLabel.textContent = listening ? 'Listening…' : 'Listen';
+      if (listening) {
+        const a = audio();
+        loopStart = nextStart = a.currentTime + 0.05;
+        schedule();
+        timer = window.setInterval(schedule, 100);
+        raf = requestAnimationFrame(drawSweep);
+      } else {
+        clearInterval(timer);
+        cancelAnimationFrame(raf);
+        sweep.setAttribute('d', '');
+      }
+    });
+  }
+</script>

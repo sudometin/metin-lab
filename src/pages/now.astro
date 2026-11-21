@@ -1,0 +1,65 @@
+---
+import Base from '../layouts/Base.astro';
+import Heatmap from '../components/Heatmap.astro';
+import { getNotes, commitHash as hash } from '../lib/notes';
+import now from '../data/now.json';
+import log from '../data/log.json';
+
+const notes = await getNotes();
+const typeColor: Record<string, string> = { feat: '#6EE7C8', fix: '#F59EC0', note: '#9FB8FF', init: '#F5B454', talk: '#F59EC0', paper: '#F5B454' };
+---
+<Base title="Now — metin.lab" description="What I'm building, reading and thinking about right now, plus the lab log.">
+  <section class="container section" style="padding-top: 80px; padding-bottom: 96px">
+    <div class="section-head">
+      <span class="eyebrow">~/now · updated {now.updated} · {now.location}</span>
+      <h1 class="h2" style="font-size: clamp(36px, 5vw, 56px)">What's on the bench.</h1>
+      <p>A <a href="https://nownownow.com/about" rel="noopener">now page</a>: what I'm doing at this point in my life. If you're reading this and it's stale, nudge me.</p>
+    </div>
+
+    <div class="now-grid">
+      {now.sections.map((s) => (
+        <div class="card">
+          <span class="mono now-title">$ {s.title}</span>
+          <ul>
+            {s.items.map((i) => <li>{i}</li>)}
+          </ul>
+        </div>
+      ))}
+    </div>
+
+    <div class="sub">
+      <span class="eyebrow">reading activity</span>
+      <Heatmap notes={notes} />
+    </div>
+
+    <div class="sub">
+      <span class="eyebrow">$ git log --oneline --decorate</span>
+      <ol class="log mono">
+        {log.map((c, i) => (
+          <li>
+            <span class="graph" aria-hidden="true">*</span>
+            <span class="hash">{hash(c.date + c.msg)}</span>
+            {i === 0 && <span class="head">(HEAD → main)</span>}
+            <span class="type" style={`color: ${typeColor[c.type] ?? '#A7B1BC'}`}>{c.type}:</span>
+            <span class="msg">{c.msg}</span>
+            <span class="date">{c.date}</span>
+          </li>
+        ))}
+      </ol>
+    </div>
+  </section>
+</Base>
+
+<style>
+  .now-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr)); gap: 16px; }
+  .now-title { font-size: 13px; color: var(--amber); }
+  .card ul { margin: 0; padding-left: 18px; display: grid; gap: 8px; color: var(--text-2); font-size: 15px; }
+  .sub { margin-top: 56px; display: flex; flex-direction: column; gap: 16px; }
+  .log { list-style: none; margin: 0; padding: 18px 20px; border: 1px solid var(--line-2); border-radius: var(--radius); background: #07090C; font-size: 13px; display: grid; gap: 8px; }
+  .log li { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; }
+  .graph { color: var(--mint); }
+  .hash { color: var(--amber); }
+  .head { color: var(--blue); }
+  .msg { color: var(--text); flex: 1 1 260px; }
+  .date { color: var(--faint); }
+</style>

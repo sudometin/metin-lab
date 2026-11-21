@@ -1,0 +1,65 @@
+---
+import '@fontsource/inter/400.css';
+import '@fontsource/inter/500.css';
+import '@fontsource/inter/600.css';
+import '@fontsource/space-grotesk/500.css';
+import '@fontsource/space-grotesk/700.css';
+import '@fontsource/jetbrains-mono/400.css';
+import '@fontsource/jetbrains-mono/500.css';
+import '../styles/global.css';
+import Nav from '../components/Nav.astro';
+import StatusLine from '../components/StatusLine.astro';
+import CommandPalette from '../components/CommandPalette.astro';
+
+interface Props {
+  title?: string;
+  description?: string;
+}
+const {
+  title = 'metin.lab — olfaction, signals & neural interfaces',
+  description = 'Reading notes, tools and experiments on olfactory coding, neural signal processing and neural interfaces by Metin.',
+} = Astro.props;
+const canonical = new URL(Astro.url.pathname, Astro.site);
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="alternate" type="application/rss+xml" title="metin.lab notes" href="/rss.xml" />
+    <link rel="sitemap" href="/sitemap-index.xml" />
+    <meta name="theme-color" content="#0A0C0F" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta name="twitter:card" content="summary" />
+  </head>
+  <body>
+    <a class="skip" href="#main">Skip to content</a>
+    <Nav />
+    <main id="main">
+      <slot />
+    </main>
+    <footer class="footer">
+      <div class="container footer__inner mono">
+        <span>© {new Date().getFullYear()} Metin · lab.imatin.dev</span>
+        <span><a href="/rss.xml">rss</a> · built with Astro, curiosity and too much coffee · v0.3 · press <kbd class="k">?</kbd></span>
+      </div>
+    </footer>
+    <StatusLine />
+    <CommandPalette />
+  </body>
+</html>
+
+<style>
+  .skip { position: absolute; left: -999px; top: 8px; z-index: 50; padding: 10px 14px; background: var(--mint); color: var(--mint-ink); border-radius: 8px; }
+  .skip:focus { left: 8px; }
+  .footer { border-top: 1px solid var(--line); }
+  .k { font-family: var(--font-mono); font-size: 11px; padding: 1px 6px; border: 1px solid var(--line-3); border-radius: 5px; color: var(--text); }
+  .footer__inner { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; padding-block: 28px 72px; font-size: 12px; color: var(--muted); }
+</style>

@@ -1,0 +1,23 @@
+---
+import Base from '../layouts/Base.astro';
+import KnowledgeGraph from '../components/KnowledgeGraph.astro';
+import { getNotes, buildGraph } from '../lib/notes';
+
+const notes = await getNotes();
+const { nodes, links } = buildGraph(notes);
+const counts = {
+  notes: nodes.filter((n) => n.type === 'note').length,
+  concepts: nodes.filter((n) => n.type === 'concept').length,
+  authors: nodes.filter((n) => n.type === 'author').length,
+};
+---
+<Base title="Knowledge graph — metin.lab" description="A living map of the papers I read, linked by topic, concept and author.">
+  <section class="container section" style="padding-top: 80px; padding-bottom: 96px">
+    <div class="section-head">
+      <span class="eyebrow">~/graph · {counts.notes} notes · {counts.concepts} concepts · {counts.authors} authors · {links.length} synapses</span>
+      <h1 class="h2" style="font-size: clamp(36px, 5vw, 56px)">A connectome of my reading.</h1>
+      <p>Every note is a neuron. Topics, concepts and authors are the synapses that wire them together. The amber dots are spikes passing along the connections. The graph grows every time I write a note.</p>
+    </div>
+    <KnowledgeGraph nodes={nodes} links={links} height={620} />
+  </section>
+</Base>

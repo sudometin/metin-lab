@@ -1,0 +1,96 @@
+---
+import { getCollection, render } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import { bibtex, getNotes } from '../../lib/notes';
+
+export async function getStaticPaths() {
+  const notes = await getCollection('notes', ({ data }) => !data.draft);
+  return notes.map((note) => ({ params: { slug: note.id }, props: { note } }));
+}
+
+const { note } = Astro.props;
+const { Content } = await render(note);
+const d = note.data;
+const bib = bibtex(note);
+const all = await getNotes();
+const idx = all.findIndex((n) => n.id === note.id);
+const newer = all[idx - 1];
+const older = all[idx + 1];
+const tagClass = `tag tag--${d.tag.toLowerCase().replace(/\s+/g, '-')}`;
+const written = d.date.toISOString().slice(0, 10);
+---
+<Base title={`${d.title} — metin.lab`} description={d.summary}>
+  <article class="container note-page">
+    <a class="mono back" href="/notes/">← cd ../notes</a>
+    <header class="note-head">
+      <div class="mono note-meta">
+        <span class={tagClass}>{d.tag}</span>
+        <span class="muted">written {written} · {d.minutes} min read</span>
+      </div>
+      <h1>{d.title}</h1>
+      <p class="lede">{d.summary}</p>
+      <dl class="paper mono">
+        <div><dt>paper</dt><dd>{d.paper}</dd></div>
+        <div><dt>authors</dt><dd>{d.authors}</dd></div>
+        <div><dt>venue</dt><dd>{d.venue}, {d.year}</dd></div>
+        {d.doi && <div><dt>doi</dt><dd><a href={`https://doi.org/${d.doi}`} rel="noopener">{d.doi}</a></dd></div>}
+      </dl>
+      {d.concepts.length > 0 && (
+        <div class="concepts mono">
+          <span class="muted">synapses:</span>
+          {d.concepts.map((c) => <a href={`/graph/?focus=${encodeURIComponent(c)}`}>#{c.replace(/\s+/g, '-')}</a>)}
+        </div>
+      )}
+      <div class="cite">
+        <button type="button" class="btn" data-copy-bib>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"></rect><path d="M5 15V5a2 2 0 0 1 2-2h10"></path></svg>
+          <span data-copy-label>Copy BibTeX</span>
+        </button>
+        <details>
+          <summary class="mono">show .bib</summary>
+          <pre class="bib mono" data-bib>{bib}</pre>
+        </details>
+      </div>
+    </header>
+    <div class="prose">
+      <Content />
+    </div>
+    <footer class="note-foot mono">
+      {older ? <a href={`/notes/${older.id}/`}>← {older.data.title}</a> : <a href="/notes/">← all notes</a>}
+      {newer ? <a href={`/notes/${newer.id}/`}>{newer.data.title} →</a> : <a href="/graph/">see the graph →</a>}
+    </footer>
+  </article>
+</Base>
+
+<style>
+  .note-page { max-width: 820px; padding-block: 56px 96px; }
+  .back { display: inline-block; font-size: 13px; padding: 10px 0; margin-bottom: 24px; }
+  .note-head { display: flex; flex-direction: column; gap: 18px; padding-bottom: 32px; margin-bottom: 8px; border-bottom: 1px solid var(--line-2); }
+  .note-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; font-size: 12px; }
+  h1 { margin: 0; font-family: var(--font-display); font-weight: 700; font-size: clamp(34px, 5vw, 52px); line-height: 1.05; letter-spacing: -0.03em; }
+  .lede { margin: 0; font-size: 19px; color: var(--text-2); }
+  .paper { margin: 8px 0 0; padding: 18px 20px; border: 1px solid var(--line-2); border-radius: 12px; background: var(--surface); display: grid; gap: 8px; font-size: 13px; }
+  .paper div { display: grid; grid-template-columns: 80px 1fr; gap: 12px; }
+  .paper dt { color: var(--muted); }
+  .paper dd { margin: 0; color: var(--text); word-break: break-word; }
+  .concepts { display: flex; flex-wrap: wrap; gap: 8px 14px; font-size: 13px; }
+  .concepts a { color: var(--blue); }
+  .concepts a:hover { color: var(--text); }
+  .cite { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 12px 16px; }
+  .cite details { flex: 1 1 300px; min-width: 0; }
+  .cite summary { cursor: pointer; font-size: 12px; color: var(--muted); min-height: 44px; display: flex; align-items: center; }
+  .bib { margin: 4px 0 0; padding: 14px 16px; border-radius: 10px; border: 1px solid var(--line-2); background: #07090C; font-size: 12px; color: var(--amber); overflow-x: auto; }
+  .note-foot a { max-width: 48%; }
+  .note-foot { display: flex; justify-content: space-between; gap: 16px; margin-top: 56px; padding-top: 24px; border-top: 1px solid var(--line-2); font-size: 13px; }
+</style>
+
+<script>
+  const btn = document.querySelector('[data-copy-bib]');
+  btn?.addEventListener('click', async () => {
+    const text = document.querySelector('[data-bib]')?.textContent ?? '';
+    const label = btn.querySelector('[data-copy-label]')!;
+    try { await navigator.clipboard.writeText(text); label.textContent = 'Copied to clipboard ✓'; }
+    catch { (btn.nextElementSibling as HTMLDetailsElement).open = true; label.textContent = 'Select & copy below'; }
+    setTimeout(() => (label.textContent = 'Copy BibTeX'), 2200);
+  });
+</script>

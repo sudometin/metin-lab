@@ -1,0 +1,208 @@
+---
+// Odor Decoder: guess the odor from a noisy glomerular activation map
+---
+<div class="panel game" id="odor-game">
+  <div class="game__map">
+    <div class="game__row mono">
+      <span>sniff #<span data-round>1</span></span>
+      <span>level <span class="mint" data-level>1</span> · noise <span data-noise>18</span>%</span>
+    </div>
+    <div class="map" data-map role="img" aria-label="Noisy glomerular activation map to decode"></div>
+    <div class="game__row game__hud">
+      <div class="lives" data-lives aria-label="3 lives left"></div>
+      <div class="mono score">
+        <span>score <b data-score>0</b></span>
+        <span>streak <b class="amber" data-streak>0</b></span>
+        <span>best <b data-best>0</b></span>
+      </div>
+    </div>
+  </div>
+
+  <div class="game__answers">
+    <div data-playing>
+      <h3>Which odor was that?</h3>
+      <div class="options" data-options></div>
+      <div class="game__foot">
+        <span class="mono msg" role="status" data-msg>Sniff, compare, decide.</span>
+        <button type="button" class="btn btn-primary" data-next hidden>Next sniff →</button>
+      </div>
+    </div>
+    <div class="over" data-over hidden>
+      <span class="mono pink">// out of sniffs</span>
+      <h3 class="over__title">You scored <span data-final>0</span>.</h3>
+      <p>You reached level <span data-final-level>1</span> with <span data-final-correct>0</span> correct decodes. Best on this device: <span data-final-best>0</span>. Real animals do this in about one sniff.</p>
+      <button type="button" class="btn btn-primary" data-restart>Play again</button>
+    </div>
+  </div>
+</div>
+
+<style>
+  .game { display: flex; flex-wrap: wrap; }
+  .game__map { flex: 1 1 340px; min-width: 0; padding: 24px; display: flex; flex-direction: column; gap: 16px; border-right: 1px solid var(--line); }
+  .game__row { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; font-size: 12px; color: var(--muted); }
+  .map { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px; padding: 16px; border-radius: 14px; background: var(--surface-2); border: 1px solid var(--line); width: 100%; max-width: 380px; align-self: center; }
+  .map :global(span), :global(.mini span) { display: block; aspect-ratio: 1; border-radius: 50%; transition: background .25s; }
+  .lives { display: flex; gap: 6px; }
+  .score { display: flex; gap: 20px; font-size: 13px; color: var(--muted); }
+  .score b { font-weight: 400; font-size: 18px; color: var(--text); }
+  .score b.amber { color: var(--amber); }
+  .game__answers { flex: 999 1 480px; min-width: 0; padding: 24px; display: flex; flex-direction: column; gap: 16px; }
+  .game__answers h3 { margin: 0 0 16px; font-family: var(--font-display); font-size: 20px; font-weight: 500; }
+  .options { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 200px), 1fr)); gap: 12px; }
+  .options :global(button) { display: flex; align-items: center; gap: 14px; min-height: 64px; padding: 12px; border-radius: 12px; border: 1px solid var(--line-3); background: var(--surface-2); color: var(--text); text-align: left; }
+  .options :global(button:hover) { border-color: #3A4450; }
+  .options :global(button.is-correct) { border-color: var(--mint); background: var(--mint-bg); }
+  .options :global(button.is-wrong) { border-color: var(--pink); background: #1E1218; }
+  .options :global(.mini) { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 3px; width: 72px; flex: 0 0 72px; }
+  .options :global(.opt-name) { display: block; font-family: var(--font-display); font-size: 17px; font-weight: 500; }
+  .options :global(.opt-mol) { display: block; font-family: var(--font-mono); font-size: 11px; color: var(--muted); }
+  .game__foot { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px; min-height: 48px; margin-top: 16px; }
+  .msg { font-size: 14px; color: var(--muted); }
+  .over { display: flex; flex-direction: column; gap: 14px; align-items: flex-start; }
+  .over p { margin: 0; color: var(--text-2); }
+  .over__title { margin: 0 !important; font-family: var(--font-display); font-size: 34px !important; font-weight: 700 !important; letter-spacing: -0.02em; }
+  .mint { color: var(--mint); } .amber { color: var(--amber); } .pink { color: var(--pink); font-size: 13px; }
+</style>
+
+<script>
+  const root = document.getElementById('odor-game');
+  if (root) {
+    const $ = <T extends HTMLElement = HTMLElement>(s: string) => root.querySelector(s) as T;
+    const ODORS = [
+      { name: 'Banana', molecule: 'isoamyl acetate', color: '#F5B454' },
+      { name: 'Rose', molecule: '2-phenylethanol', color: '#F59EC0' },
+      { name: 'Spearmint', molecule: '(R)-carvone', color: '#6EE7C8' },
+      { name: 'Fish', molecule: 'trimethylamine', color: '#9FB8FF' },
+    ].map((o, idx) => ({ ...o, ref: [] as number[], idx }));
+
+    // deterministic reference maps: sparse hotspots on a low baseline
+    let seed = 42;
+    const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+    ODORS.forEach((o) => {
+      const v = Array.from({ length: 36 }, () => 0.04 + rnd() * 0.14);
+      for (let k = 0; k < 5; k++) v[Math.floor(rnd() * 36)] = 0.75 + rnd() * 0.25;
+      for (let k = 0; k < 4; k++) v[Math.floor(rnd() * 36)] = 0.35 + rnd() * 0.2;
+      o.ref = v;
+    });
+
+    const BEST_KEY = 'metinlab.odor.best';
+    const readBest = () => { try { return Number(localStorage.getItem(BEST_KEY)) || 0; } catch { return 0; } };
+    const writeBest = (n: number) => { try { localStorage.setItem(BEST_KEY, String(n)); } catch {} };
+
+    const noiseFor = (level: number) => Math.min(0.9, 0.18 + (level - 1) * 0.13);
+    const levelOf = (correct: number) => 1 + Math.floor(correct / 3);
+    const cellBg = (v: number, glow: boolean) => {
+      const a = (0.06 + v * 0.94).toFixed(2);
+      return `background: rgba(110,231,200,${a});${glow && v > 0.7 ? ' box-shadow: 0 0 14px rgba(110,231,200,0.45);' : ''}`;
+    };
+
+    let s = { round: 1, score: 0, streak: 0, lives: 3, correct: 0, best: readBest(), picked: -1, answer: 0, cells: [] as number[] };
+
+    // build the 6x6 sample map once
+    const map = $('[data-map]');
+    const mapCells = Array.from({ length: 36 }, () => map.appendChild(document.createElement('span')));
+
+    // build option buttons once
+    const opts = $('[data-options]');
+    const buttons = ODORS.map((o) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.setAttribute('aria-label', `Answer: ${o.name}`);
+      const mini = document.createElement('span');
+      mini.className = 'mini';
+      mini.setAttribute('aria-hidden', 'true');
+      o.ref.forEach((v) => { const c = document.createElement('span'); c.setAttribute('style', cellBg(v, false)); mini.appendChild(c); });
+      const txt = document.createElement('span');
+      txt.innerHTML = `<span class="opt-name" style="color:${o.color}">${o.name}</span><span class="opt-mol">${o.molecule}</span>`;
+      b.append(mini, txt);
+      b.addEventListener('click', () => pick(o.idx));
+      opts.appendChild(b);
+      return { b, mini };
+    });
+
+    function newSample() {
+      const level = levelOf(s.correct);
+      const n = noiseFor(level);
+      s.answer = Math.floor(Math.random() * ODORS.length);
+      s.cells = ODORS[s.answer].ref.map((v) => {
+        let x = v + (Math.random() - 0.5) * n;
+        if (Math.random() < n * 0.25) x = Math.random() * 0.6;
+        return Math.max(0, Math.min(1, x));
+      });
+      s.picked = -1;
+    }
+
+    function render() {
+      const level = levelOf(s.correct);
+      $('[data-round]').textContent = String(s.round);
+      $('[data-level]').textContent = String(level);
+      $('[data-noise]').textContent = String(Math.round(noiseFor(level) * 100));
+      $('[data-score]').textContent = String(s.score);
+      $('[data-streak]').textContent = String(s.streak);
+      $('[data-best]').textContent = String(s.best);
+      s.cells.forEach((v, i) => mapCells[i].setAttribute('style', cellBg(v, true)));
+
+      const lives = $('[data-lives]');
+      lives.setAttribute('aria-label', `${s.lives} lives left`);
+      lives.innerHTML = [0, 1, 2].map((k) => {
+        const on = k < s.lives;
+        return `<svg width="20" height="20" viewBox="0 0 24 24" fill="${on ? '#F59EC0' : 'none'}" stroke="${on ? '#F59EC0' : '#3A4450'}" stroke-width="1.6" aria-hidden="true"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/></svg>`;
+      }).join('');
+
+      const answered = s.picked >= 0;
+      buttons.forEach(({ b, mini }, i) => {
+        b.classList.toggle('is-correct', answered && i === s.answer);
+        b.classList.toggle('is-wrong', answered && i === s.picked && i !== s.answer);
+        mini.hidden = level >= 4; // memory mode
+      });
+      const msg = $('[data-msg]');
+      if (!answered) { msg.textContent = level >= 4 ? 'Memory mode: no reference maps.' : 'Sniff, compare, decide.'; msg.style.color = ''; }
+      else if (s.picked === s.answer) { msg.textContent = `Decoded! ${ODORS[s.answer].name}${s.streak > 2 ? ` · streak ×${s.streak}` : ''}`; msg.style.color = '#6EE7C8'; }
+      else { msg.textContent = `Nope, that was ${ODORS[s.answer].name}.`; msg.style.color = '#F59EC0'; }
+      $('[data-next]').hidden = !answered;
+    }
+
+    function pick(i: number) {
+      if (s.picked >= 0) return;
+      s.picked = i;
+      const lvl = levelOf(s.correct);
+      if (i === s.answer) {
+        s.score += 10 * lvl + s.streak * 2;
+        s.streak++;
+        s.correct++;
+        if (s.score > s.best) { s.best = s.score; writeBest(s.best); }
+      } else {
+        s.streak = 0;
+        s.lives--;
+      }
+      render();
+    }
+
+    $('[data-next]').addEventListener('click', () => {
+      if (s.lives <= 0) {
+        $('[data-playing]').hidden = true;
+        $('[data-over]').hidden = false;
+        $('[data-final]').textContent = String(s.score);
+        $('[data-final-level]').textContent = String(levelOf(s.correct));
+        $('[data-final-correct]').textContent = String(s.correct);
+        $('[data-final-best]').textContent = String(s.best);
+        $('[data-restart]').focus();
+        return;
+      }
+      s.round++;
+      newSample();
+      render();
+    });
+
+    $('[data-restart]').addEventListener('click', () => {
+      s = { ...s, round: 1, score: 0, streak: 0, lives: 3, correct: 0 };
+      $('[data-playing]').hidden = false;
+      $('[data-over]').hidden = true;
+      newSample();
+      render();
+    });
+
+    newSample();
+    render();
+  }
+</script>

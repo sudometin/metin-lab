@@ -1,0 +1,206 @@
+---
+import { getNotes, bibtex, commitHash } from '../lib/notes';
+import rawLog from '../data/log.json';
+const log = rawLog.map((c) => ({ ...c, hash: commitHash(c.date + c.msg) }));
+
+// note slugs, titles and BibTeX, so the shell can `ls notes`, `open <slug>` and `bibtex <slug>`
+const notes = (await getNotes()).map((n) => ({ id: n.id, title: n.data.title, bib: bibtex(n) }));
+const chips = ['help', 'neofetch', 'ls notes', 'git log', 'fire'];
+---
+<div class="term mono" id="terminal-app">
+  <div class="term__bar">
+    <div class="term__dots" aria-hidden="true"><span></span><span></span><span></span></div>
+    <span class="term__title">guest@metin.lab: ~ — zsh</span>
+    <span class="term__size">80×24</span>
+  </div>
+  <div class="term__out" data-out aria-live="polite"></div>
+  <form class="term__in" data-form autocomplete="off">
+    <label for="term-input" class="term__prompt">guest@metin.lab<span>:~$</span></label>
+    <input id="term-input" data-input type="text" spellcheck="false" autocapitalize="off" placeholder="type a command…" />
+  </form>
+  <div class="term__chips">
+    <span>try:</span>
+    {chips.map((c) => <button type="button" data-run={c}>{c}</button>)}
+  </div>
+  <script type="application/json" data-notes set:html={JSON.stringify({ notes, log })} />
+</div>
+
+<style>
+  .term { border: 1px solid var(--line-2); border-radius: var(--radius); background: #07090C; overflow: hidden; font-size: 14px; }
+  .term__bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 16px; border-bottom: 1px solid var(--line); background: #0D1115; font-size: 12px; color: var(--muted); }
+  .term__dots { display: flex; gap: 8px; }
+  .term__dots span { width: 11px; height: 11px; border-radius: 50%; background: #3A4450; }
+  .term__size { color: var(--faint); }
+  .term__out { padding: 16px 18px 8px; height: 360px; overflow-y: auto; display: flex; flex-direction: column; }
+  .term__out :global(div) { white-space: pre-wrap; word-break: break-word; line-height: 1.55; color: var(--text-2); }
+  .term__out :global(.cmd) { color: var(--text); }
+  .term__out :global(.acc) { color: var(--mint); }
+  .term__out :global(.warm) { color: var(--amber); }
+  .term__out :global(.err) { color: var(--pink); }
+  .term__out :global(.dim) { color: var(--muted); }
+  .term__out :global(a) { text-decoration: underline; text-underline-offset: 3px; }
+  .term__in { display: flex; align-items: center; gap: 10px; padding: 8px 18px 16px; }
+  .term__prompt { color: var(--mint); white-space: nowrap; }
+  .term__prompt span { color: var(--muted); }
+  .term__in input { flex: 1; min-width: 0; min-height: 36px; background: transparent; border: none; outline: none; color: var(--text); font: inherit; caret-color: var(--mint); }
+  .term__chips { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 12px 18px; border-top: 1px solid var(--line); background: #0D1115; font-size: 12px; color: var(--muted); }
+  .term__chips button { min-height: 34px; padding: 0 12px; border-radius: 8px; border: 1px solid var(--line-3); background: transparent; color: var(--text-2); font-family: var(--font-mono); font-size: 12px; }
+  .term__chips button:hover { color: var(--text); border-color: #3A4450; }
+</style>
+
+<script>
+  import { soundOn, setSound, click } from '../lib/audio';
+  const root = document.getElementById('terminal-app');
+  if (root) {
+    const out = root.querySelector('[data-out]') as HTMLElement;
+    const form = root.querySelector('[data-form]') as HTMLFormElement;
+    const input = root.querySelector('[data-input]') as HTMLInputElement;
+    const DATA = JSON.parse(root.querySelector('[data-notes]')?.textContent || '{"notes":[],"log":[]}');
+    const notes: { id: string; title: string; bib: string }[] = DATA.notes;
+    const log: { date: string; type: string; msg: string; hash: string }[] = DATA.log;
+    const w = window as any;
+    const history: string[] = [];
+    let hi = 0;
+
+    const FACTS = [
+      'Humans carry roughly 400 functional odorant receptor genes; mice about 1,000.',
+      'Each olfactory sensory neuron expresses just one receptor gene: one neuron, one receptor.',
+      'Neurons sharing a receptor converge onto the same glomeruli in the olfactory bulb.',
+      'Olfactory sensory neurons keep being replaced throughout adult life.',
+      'Smell reaches cortex without a first stop in the thalamus, unlike vision, hearing and touch.',
+      'Rats can tell odors apart in about a single sniff (Uchida & Mainen, 2003).',
+    ];
+    const SECTIONS = ['tools', 'play', 'terminal', 'publications', 'about'];
+
+    function line(text: string, cls = '') {
+      const d = document.createElement('div');
+      if (cls) d.className = cls;
+      d.textContent = text;
+      out.appendChild(d);
+      return d;
+    }
+    function link(prefix: string, label: string, href: string, cls = '') {
+      const d = line(prefix, cls);
+      const a = document.createElement('a');
+      a.href = href;
+      a.textContent = label;
+      d.appendChild(a);
+    }
+    const scroll = () => { out.scrollTop = out.scrollHeight; };
+
+    function run(raw: string) {
+      const cmd = raw.trim();
+      const low = cmd.toLowerCase();
+      line(`guest@metin.lab:~$ ${cmd}`, 'cmd');
+      if (cmd) { history.push(cmd); hi = history.length; }
+
+      if (!low) {}
+      else if (low === 'help') {
+        line('available commands:', 'acc');
+        [
+          '  whoami          who runs this lab',
+          '  ls [notes]      list sections or notes',
+          '  open <note>     open a note by its slug',
+          '  cd <section>    jump to tools, play, publications, about',
+          '  neofetch        system info, neuron edition',
+          '  bibtex <note>   print a BibTeX entry (bibtex all for every note)',
+          '  git log         lab changelog',
+          '  graph · now     open the knowledge graph or the now page',
+          '  fire            fire an action potential',
+          '  sound           toggle spike clicks',
+          '  keys            keyboard shortcuts',
+          '  sniff           random olfaction fact',
+          '  spike           print one action potential',
+          '  contact         how to reach me',
+          '  clear           wipe the screen',
+        ].forEach((l) => line(l));
+      }
+      else if (low === 'whoami') {
+        line('metin — instructor @ Istanbul Medipol University');
+        line('teaches OOP (Java) & C · researches olfactory neural interfaces & neural signal processing');
+      }
+      else if (low === 'ls' || low === 'ls -la' || low === 'ls -l') {
+        line('drwxr-xr-x  notes/   tools/   play/   publications/   about/', 'acc');
+        line('-rw-r--r--  coffee.log   ideas.md   todo_forever.txt');
+      }
+      else if (low === 'ls notes' || low === 'ls notes/') {
+        if (!notes.length) line('(empty)', 'dim');
+        notes.forEach((n) => line(`  ${n.id.padEnd(24)} ${n.title}`));
+        line("open one with: open <slug>", 'dim');
+      }
+      else if (low.startsWith('open ') || low.startsWith('cat notes/')) {
+        const slug = low.replace(/^open\s+|^cat notes\//, '').replace(/\.md$/, '').trim();
+        const n = notes.find((x) => x.id === slug);
+        if (n) { link('→ ', n.title, `/notes/${n.id}/`, 'acc'); setTimeout(() => (location.href = `/notes/${n.id}/`), 400); }
+        else line(`open: no such note: ${slug}  — try 'ls notes'`, 'err');
+      }
+      else if (low.startsWith('cd ')) {
+        const dir = low.slice(3).replace(/\//g, '').trim();
+        if (dir === 'notes') { location.href = '/notes/'; }
+        else if (dir === '~' || dir === '' || dir === '..') line('you are already home.', 'dim');
+        else if (SECTIONS.includes(dir)) { line(`→ /${dir}`, 'acc'); location.hash = dir; }
+        else line(`cd: no such directory: ${dir}`, 'err');
+      }
+      else if (low === 'neofetch') {
+        [
+          '     .---.        guest@metin.lab',
+          '    / o o \\       ---------------',
+          '   |  (_)  |      OS: OlfactOS 26.11 (bulb edition)',
+          '    \\_____/       Kernel: mitral-tufted 6.6',
+          '   /|  |  |\\      Shell: zsh · Receptors: ~400 functional',
+          '  / |  |  | \\     Rhythms: theta · beta · gamma',
+          '                  Languages: Java · C · Python',
+        ].forEach((l) => line(l, 'acc'));
+      }
+      else if (low === 'sniff') line(`» ${FACTS[Math.floor(Math.random() * FACTS.length)]}`, 'warm');
+      else if (low === 'spike') {
+        line('V_m: -70 ▁▁▁▂▃▅▇█▇▃▁▁▁ -75 mV  (refractory…)', 'acc');
+        if (w.metinLab) w.metinLab.spikes += 1;
+      }
+      else if (low === 'git log' || low === 'git log --oneline') {
+        log.forEach((c, i) => {
+          line(`* ${c.hash}${i === 0 ? ' (HEAD -> main)' : ''} ${c.type}: ${c.msg}  [${c.date}]`, i === 0 ? 'acc' : 'out');
+        });
+      }
+      else if (low.startsWith('bibtex')) {
+        const arg = low.slice(6).trim();
+        if (!arg) line("usage: bibtex <slug> | bibtex all   (slugs: ls notes)", 'dim');
+        else if (arg === 'all') notes.forEach((n) => line(n.bib + '\n', 'warm'));
+        else {
+          const n = notes.find((x) => x.id === arg);
+          if (n) { line(n.bib, 'warm'); navigator.clipboard?.writeText(n.bib).then(() => line('(copied to clipboard)', 'dim'), () => {}); }
+          else line(`bibtex: no such note: ${arg}`, 'err');
+        }
+      }
+      else if (low === 'graph') { line('→ /graph', 'acc'); location.href = '/graph/'; }
+      else if (low === 'now') { line('→ /now', 'acc'); location.href = '/now/'; }
+      else if (low === 'fire' || low === 'ap') { line('depolarizing… threshold crossed. ⚡', 'acc'); w.metinLabFire?.(); }
+      else if (low === 'sound') { const on = !soundOn(); setSound(on); if (on) click(0, 0.4); line(`sound: ${on ? 'on · spikes now click' : 'off'}  (also: press m anywhere)`, 'acc'); }
+      else if (low === 'keys' || low === 'man') { (document.getElementById('keys') as HTMLDialogElement)?.showModal(); }
+      else if (low === 'contact') line('email: [YOUR EMAIL] · github: [GITHUB] · scholar: [GOOGLE SCHOLAR]');
+      else if (low === 'cat coffee.log') line(`${new Date().toISOString().slice(0, 10)}  cups: too many  status: still running`, 'warm');
+      else if (low === 'cat ideas.md' || low === 'cat todo_forever.txt') line('# 1. finish the paper  # 2. build the spectrogram tool  # 3. sleep (low priority)');
+      else if (low.startsWith('sudo')) line('permission denied: you are not the olfactory bulb.', 'err');
+      else if (low.startsWith('rm -rf')) line('nice try. olfactory neurons regenerate anyway.', 'err');
+      else if (low === 'exit' || low === 'logout') line('there is no exit. only more papers.', 'warm');
+      else if (low === 'clear') { out.textContent = ''; }
+      else line(`zsh: command not found: ${cmd}  — try 'help'`, 'err');
+      scroll();
+    }
+
+    line('metin.lab shell v0.2 — last login from the olfactory bulb', 'dim');
+    line("type 'help' to list commands.", 'dim');
+
+    form.addEventListener('submit', (e) => { e.preventDefault(); run(input.value); input.value = ''; });
+    input.addEventListener('keydown', (e) => {
+      if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') return;
+      if (!history.length) return;
+      e.preventDefault();
+      hi = Math.max(0, Math.min(history.length, hi + (e.key === 'ArrowUp' ? -1 : 1)));
+      input.value = history[hi] ?? '';
+    });
+    root.querySelectorAll<HTMLButtonElement>('[data-run]').forEach((b) =>
+      b.addEventListener('click', () => { run(b.dataset.run!); input.focus({ preventScroll: true }); }),
+    );
+  }
+</script>

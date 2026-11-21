@@ -1,0 +1,19 @@
+---
+import Base from '../../layouts/Base.astro';
+import NoteGrid from '../../components/NoteGrid.astro';
+import Heatmap from '../../components/Heatmap.astro';
+import { getNotes } from '../../lib/notes';
+
+const notes = await getNotes();
+---
+<Base title="Reading notes — metin.lab" description="Plain-words notes on papers in olfaction, neural signal processing, machine learning and brain–computer interfaces.">
+  <section class="container section" style="padding-top: 80px; padding-bottom: 96px">
+    <div class="section-head">
+      <span class="eyebrow">~/notes · {notes.length} files</span>
+      <h1 class="h2" style="font-size: clamp(36px, 5vw, 56px)">Reading notes</h1>
+      <p>Papers I read, what they did, and why they matter for smell, signals and neural interfaces. Subscribe via <a href="/rss.xml">RSS</a>, see how they connect in the <a href="/graph/">graph</a>, or press <kbd class="mono" style="font-size:12px;padding:1px 6px;border:1px solid var(--line-3);border-radius:5px">j</kbd> / <kbd class="mono" style="font-size:12px;padding:1px 6px;border:1px solid var(--line-3);border-radius:5px">k</kbd> to move between notes.</p>
+    </div>
+    <div style="margin-bottom: 40px"><Heatmap notes={notes} /></div>
+    <NoteGrid notes={notes} />
+  </section>
+</Base>

@@ -1,0 +1,90 @@
+---
+// GitHub-style contribution grid of reading notes, computed at build time
+import type { Note } from '../lib/notes';
+
+interface Props { notes: Note[]; weeks?: number }
+const { notes, weeks = 53 } = Astro.props;
+
+const DAY = 86400000;
+const today = new Date();
+today.setUTCHours(0, 0, 0, 0);
+const dow = (today.getUTCDay() + 6) % 7; // Monday = 0
+const start = new Date(today.getTime() - ((weeks - 1) * 7 + dow) * DAY);
+const key = (d: Date) => d.toISOString().slice(0, 10);
+
+const counts = new Map<string, number>();
+for (const n of notes) counts.set(key(n.data.date), (counts.get(key(n.data.date)) ?? 0) + 1);
+
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const cols = Array.from({ length: weeks }, (_, w) => {
+  const first = new Date(start.getTime() + w * 7 * DAY);
+  const month = first.getUTCDate() <= 7 ? MONTHS[first.getUTCMonth()] : '';
+  const days = Array.from({ length: 7 }, (_, d) => {
+    const date = new Date(first.getTime() + d * DAY);
+    const c = counts.get(key(date)) ?? 0;
+    return { k: key(date), c, future: date > today, level: c === 0 ? 0 : c === 1 ? 2 : c === 2 ? 3 : 4 };
+  });
+  return { month, days, active: days.some((x) => x.c > 0) };
+});
+
+// stats
+const thisMonth = notes.filter((n) => n.data.date.getUTCFullYear() === today.getUTCFullYear() && n.data.date.getUTCMonth() === today.getUTCMonth()).length;
+let streak = 0;
+for (let i = cols.length - 1; i >= 0; i--) {
+  if (cols[i].active) streak++;
+  else if (i === cols.length - 1) continue; // current week may still be empty
+  else break;
+}
+const tagCount = new Map<string, number>();
+notes.forEach((n) => tagCount.set(n.data.tag, (tagCount.get(n.data.tag) ?? 0) + 1));
+const topTag = [...tagCount.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? '—';
+const stats = [
+  { label: 'notes total', value: notes.length },
+  { label: 'this month', value: thisMonth },
+  { label: 'week streak', value: streak },
+  { label: 'top topic', value: topTag },
+];
+---
+<div class="heat">
+  <div class="heat__stats mono">
+    {stats.map((s) => <div><span class="muted">{s.label}</span><b>{s.value}</b></div>)}
+  </div>
+  <div class="heat__scroll" data-heat-scroll>
+    <div class="heat__grid" role="img" aria-label={`Reading activity over the last ${weeks} weeks: ${notes.length} notes`}>
+      {cols.map((col) => (
+        <div class="heat__col">
+          <span class="heat__month mono" aria-hidden="true">{col.month}</span>
+          {col.days.map((d) => (
+            <span class={`cell l${d.level}${d.future ? ' future' : ''}`} title={`${d.k} · ${d.c} note${d.c === 1 ? '' : 's'}`}></span>
+          ))}
+        </div>
+      ))}
+    </div>
+  </div>
+  <div class="heat__legend mono" aria-hidden="true">
+    <span>less</span><span class="cell l0"></span><span class="cell l2"></span><span class="cell l3"></span><span class="cell l4"></span><span>more</span>
+  </div>
+</div>
+
+<style>
+  .heat { display: flex; flex-direction: column; gap: 16px; padding: 20px 24px; border: 1px solid var(--line-2); border-radius: var(--radius); background: var(--surface); }
+  .heat__stats { display: flex; flex-wrap: wrap; gap: 12px 32px; font-size: 12px; }
+  .heat__stats div { display: flex; flex-direction: column; gap: 2px; }
+  .heat__stats b { font-family: var(--font-display); font-size: 22px; font-weight: 500; color: var(--text); }
+  .heat__scroll { overflow-x: auto; padding-bottom: 4px; }
+  .heat__grid { display: flex; gap: 4px; width: max-content; }
+  .heat__col { display: grid; grid-template-rows: 16px repeat(7, 12px); gap: 4px; }
+  .heat__month { font-size: 10px; color: var(--muted); white-space: nowrap; width: 12px; overflow: visible; }
+  .cell { display: block; width: 12px; height: 12px; border-radius: 3px; background: #151B21; }
+  .cell.l2 { background: #2B7A66; }
+  .cell.l3 { background: #4BC4A4; }
+  .cell.l4 { background: var(--mint); box-shadow: 0 0 8px rgba(110,231,200,.5); }
+  .cell.future { background: transparent; border: 1px dashed #1C232B; }
+  .heat__legend { display: flex; align-items: center; justify-content: flex-end; gap: 4px; font-size: 11px; color: var(--muted); }
+  .heat__legend span:first-child { margin-right: 4px; } .heat__legend span:last-child { margin-left: 4px; }
+</style>
+
+<script>
+  // on narrow screens, start scrolled to the most recent weeks
+  document.querySelectorAll<HTMLElement>('[data-heat-scroll]').forEach((el) => (el.scrollLeft = el.scrollWidth));
+</script>

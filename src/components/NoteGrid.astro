@@ -1,0 +1,73 @@
+---
+import type { CollectionEntry } from 'astro:content';
+import { TAGS } from '../content.config';
+
+interface Props {
+  notes: CollectionEntry<'notes'>[];
+  filter?: boolean;
+}
+const { notes, filter = true } = Astro.props;
+const slugTag = (t: string) => t.toLowerCase().replace(/\s+/g, '-');
+---
+<div class="note-grid" data-note-grid>
+  {filter && (
+    <div class="filters" role="group" aria-label="Filter notes by topic">
+      {['All', ...TAGS].map((t, i) => (
+        <button class="chip" type="button" data-filter={t} aria-pressed={i === 0 ? 'true' : 'false'}>{t}</button>
+      ))}
+    </div>
+  )}
+  <div class="grid-cards">
+    {notes.map((n) => (
+      <article class="card note" data-tag={n.data.tag}>
+        <div class="note__meta mono">
+          <span class={`tag tag--${slugTag(n.data.tag)}`}>{n.data.tag}</span>
+          <span class="muted">{n.data.year} · {n.data.minutes} min</span>
+        </div>
+        <h3><a class="note__link" href={`/notes/${n.id}/`}>{n.data.title}</a></h3>
+        <p class="mono note__src">{n.data.authors} · {n.data.venue}</p>
+        <p class="note__sum">{n.data.summary}</p>
+        <span class="note__more" aria-hidden="true">Read note
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 8h10M9 4l4 4-4 4"></path></svg>
+        </span>
+      </article>
+    ))}
+  </div>
+  <p class="empty mono muted" hidden>No notes with this tag yet.</p>
+</div>
+
+<style>
+  .filters { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 24px; }
+  .note { position: relative; gap: 14px; }
+  .note__meta { display: flex; justify-content: space-between; align-items: center; gap: 12px; font-size: 12px; }
+  .note h3 { font-size: 21px; }
+  .note__link { color: var(--text); }
+  .note__link::after { content: ''; position: absolute; inset: 0; border-radius: inherit; }
+  .note__link:focus-visible { outline: none; }
+  .note:has(.note__link:focus-visible) { outline: 2px solid var(--mint); outline-offset: 3px; }
+  .note__src { font-size: 12px !important; color: var(--muted) !important; }
+  .note__sum { flex-grow: 1; }
+  .note__more { display: inline-flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 500; color: var(--mint); }
+  .empty { margin-top: 16px; }
+</style>
+
+<script>
+  document.querySelectorAll<HTMLElement>('[data-note-grid]').forEach((root) => {
+    const chips = root.querySelectorAll<HTMLButtonElement>('[data-filter]');
+    const cards = root.querySelectorAll<HTMLElement>('[data-tag]');
+    const empty = root.querySelector<HTMLElement>('.empty');
+    chips.forEach((chip) =>
+      chip.addEventListener('click', () => {
+        const f = chip.dataset.filter;
+        chips.forEach((c) => c.setAttribute('aria-pressed', String(c === chip)));
+        let shown = 0;
+        cards.forEach((c) => {
+          const on = f === 'All' || c.dataset.tag === f;
+          c.hidden = !on;
+          if (on) shown++;
+        });
+        if (empty) empty.hidden = shown > 0;
+      }),
+    );
+  });
+</script>

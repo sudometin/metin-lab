@@ -1,0 +1,26 @@
+[
+  {
+    "id": "olfactory-interface-patent",
+    "year": "[YEAR]",
+    "title": "Bidirectional olfactory neural interface eyewear system",
+    "venue": "Patent application · [OFFICE / NUMBER]",
+    "kind": "patent",
+    "order": 1
+  },
+  {
+    "id": "odor-lfp-dl",
+    "year": "in prep",
+    "title": "Deep learning for odor detection from local field potentials",
+    "venue": "[TARGET JOURNAL / PREPRINT]",
+    "kind": "paper",
+    "order": 2
+  },
+  {
+    "id": "placeholder-paper",
+    "year": "[YEAR]",
+    "title": "[YOUR PUBLICATION TITLE]",
+    "venue": "[AUTHORS] · [JOURNAL OR CONFERENCE]",
+    "kind": "paper",
+    "order": 3
+  }
+]

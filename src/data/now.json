@@ -1,0 +1,35 @@
+{
+  "updated": "2026-11-20",
+  "location": "Istanbul",
+  "sections": [
+    {
+      "title": "building",
+      "items": [
+        "this website: notes, tools, games, a shell",
+        "a CNN that decodes odors from olfactory bulb LFP",
+        "[SOMETHING ELSE YOU ARE BUILDING]"
+      ]
+    },
+    {
+      "title": "reading",
+      "items": [
+        "[PAPER OR BOOK YOU ARE READING]",
+        "[ANOTHER ONE]"
+      ]
+    },
+    {
+      "title": "teaching",
+      "items": [
+        "Object-Oriented Programming (Java)",
+        "C Programming"
+      ]
+    },
+    {
+      "title": "thinking about",
+      "items": [
+        "how much of the olfactory code survives in field potentials",
+        "[AN OPEN QUESTION ON YOUR MIND]"
+      ]
+    }
+  ]
+}

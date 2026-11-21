@@ -1,0 +1,221 @@
+---
+// Ctrl/⌘+K command palette, `?` shortcuts overlay, g-prefixed jumps, j/k navigation, Konami easter egg
+import { getNotes } from '../lib/notes';
+
+const notes = await getNotes();
+const items = [
+  { group: 'go', label: 'Home', hint: 'g h', href: '/' },
+  { group: 'go', label: 'Reading notes', hint: 'g n', href: '/notes/' },
+  { group: 'go', label: 'Knowledge graph', hint: 'g g', href: '/graph/' },
+  { group: 'go', label: 'Now · lab log', hint: 'g w', href: '/now/' },
+  { group: 'go', label: 'Tools · LIF neuron', hint: 'g t', href: '/#tools' },
+  { group: 'go', label: 'Play · games', hint: 'g p', href: '/#play' },
+  { group: 'go', label: 'Terminal', hint: 'g s', href: '/#terminal' },
+  { group: 'go', label: 'Publications', hint: '', href: '/#publications' },
+  { group: 'go', label: 'About · contact', hint: '', href: '/#about' },
+  ...notes.map((n) => ({ group: 'note', label: n.data.title, hint: `${n.data.tag} · ${n.data.year}`, href: `/notes/${n.id}/` })),
+  { group: 'do', label: 'Fire an action potential', hint: '↑↑↓↓←→←→BA', action: 'ap' },
+  { group: 'do', label: 'Open a random note', hint: 'r', action: 'random' },
+  { group: 'do', label: 'Toggle sound', hint: 'm', action: 'sound' },
+  { group: 'do', label: 'Subscribe via RSS', hint: '', href: '/rss.xml' },
+];
+const shortcuts = [
+  ['⌘K / Ctrl K', 'command palette'],
+  ['?', 'this help'],
+  ['g h · g n · g g · g w', 'home · notes · graph · now'],
+  ['g t · g p · g s', 'tools · play · shell'],
+  ['j / k', 'next / previous note card'],
+  ['r', 'random note'],
+  ['m', 'toggle sound'],
+  ['1 2 3', 'sort spikes (while playing)'],
+  ['↑↑↓↓←→←→ B A', 'you know what this does'],
+];
+---
+<dialog class="cp" id="cmdk" aria-label="Command palette">
+  <div class="cp__box">
+    <div class="cp__input mono">
+      <span class="mint">❯</span>
+      <input type="text" data-cp-input placeholder="jump to… notes, pages, actions" aria-label="Search commands" autocomplete="off" spellcheck="false" />
+      <kbd>esc</kbd>
+    </div>
+    <ul class="cp__list" role="listbox" data-cp-list></ul>
+  </div>
+</dialog>
+
+<dialog class="cp cp--help" id="keys" aria-label="Keyboard shortcuts">
+  <div class="cp__box">
+    <div class="cp__head mono"><span class="mint">$ man metin.lab</span><kbd>esc</kbd></div>
+    <dl class="keys mono">
+      {shortcuts.map(([k, v]) => <div><dt>{k}</dt><dd>{v}</dd></div>)}
+    </dl>
+  </div>
+</dialog>
+
+<div class="ap" aria-hidden="true" data-ap hidden>
+  <svg viewBox="0 0 2400 300" preserveAspectRatio="none"><path d="M0 200 H1080 C1120 200 1130 190 1150 170 C1165 150 1170 30 1185 20 C1200 10 1205 120 1215 220 C1225 260 1240 250 1260 235 C1290 215 1330 205 1400 200 H2400" stroke="#6EE7C8" stroke-width="4" fill="none" vector-effect="non-scaling-stroke"></path></svg>
+</div>
+<div class="toast mono" role="status" data-toast hidden></div>
+
+<script type="application/json" id="cp-items" set:html={JSON.stringify(items)} />
+
+<style>
+  .cp { padding: 0; border: none; background: transparent; width: min(640px, calc(100vw - 32px)); max-height: 70vh; margin-top: 12vh; }
+  .cp::backdrop { background: rgba(4,6,8,.72); backdrop-filter: blur(4px); }
+  .cp__box { border: 1px solid var(--line-3); border-radius: 16px; background: #0D1115; box-shadow: 0 30px 80px rgba(0,0,0,.6); overflow: hidden; color: var(--text); }
+  .cp__input { display: flex; align-items: center; gap: 12px; padding: 14px 18px; border-bottom: 1px solid var(--line); }
+  .cp__input input { flex: 1; min-width: 0; min-height: 32px; background: transparent; border: none; outline: none; color: var(--text); font: inherit; font-size: 15px; }
+  .cp kbd { font-family: var(--font-mono); font-size: 11px; padding: 2px 7px; border: 1px solid var(--line-3); border-radius: 6px; color: var(--muted); }
+  .cp__list { list-style: none; margin: 0; padding: 8px; max-height: 52vh; overflow-y: auto; }
+  .cp__list :global(li) { display: flex; justify-content: space-between; align-items: center; gap: 16px; min-height: 44px; padding: 0 12px; border-radius: 10px; cursor: pointer; }
+  .cp__list :global(li[aria-selected='true']) { background: #16201E; outline: 1px solid #1F3B35; }
+  .cp__list :global(.grp) { font-family: var(--font-mono); font-size: 11px; color: var(--faint); width: 36px; flex: 0 0 36px; }
+  .cp__list :global(.lbl) { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .cp__list :global(.hint) { font-family: var(--font-mono); font-size: 11px; color: var(--muted); white-space: nowrap; }
+  .cp__list :global(.empty) { color: var(--muted); font-family: var(--font-mono); font-size: 13px; cursor: default; }
+  .cp__head { display: flex; justify-content: space-between; align-items: center; padding: 14px 18px; border-bottom: 1px solid var(--line); font-size: 13px; }
+  .keys { margin: 0; padding: 12px 18px 18px; display: grid; gap: 4px; font-size: 13px; }
+  .keys div { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; padding: 6px 0; border-bottom: 1px dashed var(--line); }
+  .keys dt { color: var(--amber); }
+  .keys dd { margin: 0; color: var(--text-2); }
+  .mint { color: var(--mint); }
+
+  .ap { position: fixed; inset: 0; z-index: 100; pointer-events: none; display: flex; align-items: center; overflow: hidden; }
+  .ap svg { width: 200vw; height: 40vh; filter: drop-shadow(0 0 14px rgba(110,231,200,.8)); animation: ap 1.4s cubic-bezier(.4,0,.2,1) forwards; }
+  @keyframes ap { from { transform: translateX(-100vw); } to { transform: translateX(60vw); } }
+  .ap.flash::before { content: ''; position: absolute; inset: 0; background: rgba(110,231,200,.08); animation: fade 1.4s forwards; }
+  @keyframes fade { 40% { opacity: 1; } to { opacity: 0; } }
+  .toast { position: fixed; left: 50%; bottom: 56px; transform: translateX(-50%); z-index: 101; padding: 12px 18px; border-radius: 12px; border: 1px solid #1F3B35; background: #0E1C19; color: var(--mint); font-size: 13px; box-shadow: 0 10px 40px rgba(0,0,0,.5); max-width: calc(100vw - 32px); }
+</style>
+
+<script>
+  import { click, soundOn, setSound } from '../lib/audio';
+
+  type Item = { group: string; label: string; hint: string; href?: string; action?: string };
+  const items: Item[] = JSON.parse(document.getElementById('cp-items')!.textContent!);
+  const dlg = document.getElementById('cmdk') as HTMLDialogElement;
+  const help = document.getElementById('keys') as HTMLDialogElement;
+  const input = dlg.querySelector('[data-cp-input]') as HTMLInputElement;
+  const list = dlg.querySelector('[data-cp-list]') as HTMLUListElement;
+  const toastEl = document.querySelector('[data-toast]') as HTMLElement;
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let sel = 0;
+  let shown: Item[] = [];
+
+  function toast(msg: string) {
+    toastEl.textContent = msg;
+    toastEl.hidden = false;
+    clearTimeout((toast as any).t);
+    (toast as any).t = setTimeout(() => (toastEl.hidden = true), 2600);
+  }
+
+  // subsequence fuzzy match: "kgr" matches "Knowledge graph"
+  function score(q: string, s: string) {
+    s = s.toLowerCase();
+    if (!q) return 1;
+    if (s.includes(q)) return 100 - s.indexOf(q);
+    let i = 0;
+    for (const ch of s) if (ch === q[i]) i++;
+    return i === q.length ? 10 : 0;
+  }
+  function render() {
+    const q = input.value.trim().toLowerCase();
+    shown = items.map((it) => ({ it, s: score(q, `${it.label} ${it.hint} ${it.group}`) })).filter((x) => x.s > 0).sort((a, b) => b.s - a.s).map((x) => x.it);
+    sel = Math.min(sel, Math.max(0, shown.length - 1));
+    list.innerHTML = '';
+    if (!shown.length) { const li = document.createElement('li'); li.className = 'empty'; li.textContent = `zsh: no match for "${q}"`; list.appendChild(li); return; }
+    shown.forEach((it, i) => {
+      const li = document.createElement('li');
+      li.setAttribute('role', 'option');
+      li.setAttribute('aria-selected', String(i === sel));
+      const g = document.createElement('span'); g.className = 'grp'; g.textContent = it.group;
+      const l = document.createElement('span'); l.className = 'lbl'; l.textContent = it.label;
+      const h = document.createElement('span'); h.className = 'hint'; h.textContent = it.hint;
+      li.append(g, l, h);
+      li.addEventListener('mousemove', () => { if (sel !== i) { sel = i; render(); } });
+      li.addEventListener('click', () => exec(it));
+      list.appendChild(li);
+    });
+    list.children[sel]?.scrollIntoView({ block: 'nearest' });
+  }
+  function open() { if (help.open) help.close(); input.value = ''; sel = 0; render(); dlg.showModal(); input.focus(); }
+  function exec(it: Item) {
+    dlg.close();
+    if (it.href) location.href = it.href;
+    else if (it.action) act(it.action);
+  }
+
+  function randomNote() {
+    const notes = items.filter((x) => x.group === 'note');
+    location.href = notes[Math.floor(Math.random() * notes.length)].href!;
+  }
+  function toggleSound() {
+    const on = !soundOn();
+    setSound(on);
+    if (on) click(0, 0.4);
+    toast(on ? 'sound: on · spikes now click' : 'sound: off');
+  }
+  function fireAP() {
+    const el = document.querySelector('[data-ap]') as HTMLElement;
+    if (soundOn()) { click(0, 0.5, 1600); }
+    const w = window as any;
+    w.metinLab ??= { spikes: 0 };
+    w.metinLab.spikes += 1000;
+    if (!reduce) {
+      el.hidden = false;
+      el.classList.remove('flash');
+      const svg = el.querySelector('svg')!;
+      svg.style.animation = 'none'; void svg.getBoundingClientRect(); svg.style.animation = '';
+      el.classList.add('flash');
+      setTimeout(() => (el.hidden = true), 1450);
+    }
+    toast('⚡ action potential fired · +1000 spikes · all-or-none, baby');
+  }
+  function act(a: string) {
+    if (a === 'random') randomNote();
+    else if (a === 'sound') toggleSound();
+    else if (a === 'ap') fireAP();
+  }
+  (window as any).metinLabFire = fireAP;
+
+  input.addEventListener('input', () => { sel = 0; render(); });
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowDown' || (e.ctrlKey && e.key === 'n')) { e.preventDefault(); sel = Math.min(shown.length - 1, sel + 1); render(); }
+    else if (e.key === 'ArrowUp' || (e.ctrlKey && e.key === 'p')) { e.preventDefault(); sel = Math.max(0, sel - 1); render(); }
+    else if (e.key === 'Enter' && shown[sel]) { e.preventDefault(); exec(shown[sel]); }
+  });
+  [dlg, help].forEach((d) => d.addEventListener('click', (e) => { if (e.target === d) d.close(); }));
+
+  // global keys
+  const GO: Record<string, string> = { h: '/', n: '/notes/', g: '/graph/', w: '/now/', t: '/#tools', p: '/#play', s: '/#terminal' };
+  const KONAMI = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'];
+  let kpos = 0;
+  let gPending = 0;
+  let cursor = -1;
+
+  window.addEventListener('keydown', (e) => {
+    // konami works everywhere except while typing
+    const el = document.activeElement as HTMLElement | null;
+    const typing = !!el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable);
+    if (!typing) {
+      const k = e.key.length === 1 ? e.key.toLowerCase() : e.key;
+      kpos = k === KONAMI[kpos] ? kpos + 1 : k === KONAMI[0] ? 1 : 0;
+      if (kpos === KONAMI.length) { kpos = 0; fireAP(); return; }
+    }
+    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); dlg.open ? dlg.close() : open(); return; }
+    if (typing || e.metaKey || e.ctrlKey || e.altKey || dlg.open) return;
+    if (e.key === '?') { e.preventDefault(); help.open ? help.close() : help.showModal(); return; }
+    if (help.open) return;
+    if (gPending && Date.now() - gPending < 900 && GO[e.key]) { gPending = 0; location.href = GO[e.key]; return; }
+    if (e.key === 'g') { gPending = Date.now(); return; }
+    if (e.key === 'r') { randomNote(); return; }
+    if (e.key === 'm') { toggleSound(); return; }
+    if (e.key === 'j' || e.key === 'k') {
+      const cards = [...document.querySelectorAll<HTMLAnchorElement>('.note__link')].filter((a) => a.offsetParent !== null);
+      if (!cards.length) return;
+      e.preventDefault();
+      cursor = e.key === 'j' ? Math.min(cards.length - 1, cursor + 1) : Math.max(0, cursor - 1);
+      cards[cursor].focus();
+      cards[cursor].closest('article')?.scrollIntoView({ block: 'center', behavior: reduce ? 'auto' : 'smooth' });
+    }
+  });
+</script>

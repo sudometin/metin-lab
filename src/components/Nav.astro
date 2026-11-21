@@ -1,0 +1,47 @@
+---
+const links = [
+  { href: '/notes/', label: '/notes' },
+  { href: '/graph/', label: '/graph' },
+  { href: '/#tools', label: '/tools' },
+  { href: '/#play', label: '/play' },
+  { href: '/now/', label: '/now' },
+  { href: '/#about', label: '/about' },
+];
+---
+<header class="nav">
+  <nav aria-label="Main" class="container nav__inner">
+    <a href="/" class="logo" aria-label="metin.lab home">
+      <svg width="28" height="28" viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="14" cy="14" r="4.5"></circle><path d="M14 9.5V3M9.8 12.2 4 8.5M18.2 12.2 24 8.5M10.5 17.2 5.5 23M17.5 17.2 22.5 23M14 18.5V25"></path><circle cx="14" cy="3" r="1.2" fill="currentColor"></circle><circle cx="22.5" cy="23" r="1.2" fill="currentColor"></circle></svg>
+      <span class="mono">metin<span class="dot">.lab</span></span>
+    </a>
+    <div class="nav__links mono">
+      {links.map((l) => <a class="nav__link" href={l.href}>{l.label}</a>)}
+      <button type="button" class="kbtn" data-open-cmdk aria-label="Open command palette"><span>⌘K</span></button>
+      <span class="rec"><span class="rec__dot"></span>recording</span>
+    </div>
+  </nav>
+</header>
+
+<style>
+  .nav { position: sticky; top: 0; z-index: 20; background: rgba(10,12,15,0.86); backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); }
+  .nav__inner { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 32px; padding-block: 14px; }
+  .logo { display: flex; align-items: center; gap: 10px; color: var(--mint); }
+  .logo span { color: var(--text); font-size: 15px; font-weight: 500; }
+  .logo .dot { color: var(--mint); }
+  .nav__links { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 24px; font-size: 13px; }
+  .nav__link { color: var(--muted); padding: 10px 0; }
+  .nav__link:hover { color: var(--text); }
+  .kbtn { min-height: 34px; padding: 0 10px; border-radius: 8px; border: 1px solid var(--line-3); background: transparent; color: var(--muted); font-family: var(--font-mono); font-size: 12px; }
+  .kbtn:hover { color: var(--text); border-color: #3A4450; }
+  .rec { display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px; border: 1px solid #1F3B35; border-radius: 999px; color: var(--mint); background: var(--mint-bg); }
+  .rec__dot { width: 7px; height: 7px; border-radius: 50%; background: var(--mint); animation: pulse 1.6s ease-in-out infinite; }
+  @media (max-width: 640px) { .rec { display: none; } .nav__links { gap: 0 18px; } }
+  @keyframes pulse { 50% { opacity: .25; } }
+  @media (prefers-reduced-motion: reduce) { .rec__dot { animation: none; } }
+</style>
+
+<script>
+  document.querySelector('[data-open-cmdk]')?.addEventListener('click', () => {
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', ctrlKey: true }));
+  });
+</script>
