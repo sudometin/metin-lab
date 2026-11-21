@@ -1,176 +1,337 @@
 ---
 import { getCollection } from 'astro:content';
 import Base from '../layouts/Base.astro';
-import Hero from '../components/Hero.astro';
-import NoteGrid from '../components/NoteGrid.astro';
+import Terminal from '../components/Terminal.astro';
+import Signal from '../components/Signal.astro';
+import Activity from '../components/Activity.astro';
 import LifSimulator from '../components/LifSimulator.astro';
 import OdorDecoder from '../components/OdorDecoder.astro';
-import Terminal from '../components/Terminal.astro';
 import SpikeSorter from '../components/SpikeSorter.astro';
+import { getNotes, tagSlug, commitHash } from '../lib/notes';
+import rawLog from '../data/log.json';
+import timeline from '../data/timeline.json';
 
-const notes = (await getCollection('notes', ({ data }) => !data.draft))
-  .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf())
-  .slice(0, 6);
+const notes = (await getNotes()).slice(0, 6);
 const pubs = (await getCollection('publications')).sort((a, b) => a.data.order - b.data.order);
-const kindColor: Record<string, string> = { patent: '#F5B454', paper: '#6EE7C8', preprint: '#9FB8FF', talk: '#F59EC0', thesis: '#A7B1BC' };
+const ops = (await getCollection('ops', ({ data }) => !data.draft)).sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf()).slice(0, 3);
+const log = rawLog.slice(0, 7).map((c) => ({ ...c, hash: commitHash(c.date + c.msg) }));
+const kindColor: Record<string, string> = { patent: '#F5B454', paper: 'var(--mint)', preprint: '#9FB8FF', talk: '#F59EC0', thesis: '#A7B1BC' };
+const logColor: Record<string, string> = { feat: 'var(--mint)', read: '#9FB8FF', exp: '#F5B454', data: '#F59EC0', init: '#F5B454', fix: '#F59EC0' };
 
 const tools = [
-  { status: 'live', color: '#6EE7C8', title: 'Knowledge graph', body: 'Every note is a neuron, every shared concept a synapse. Watch spikes travel through a connectome of my reading.', icon: 'M5 6a2 2 0 1 0 0 .01M19 5a2 2 0 1 0 0 .01M12 19a2 2 0 1 0 0 .01M7 7l4 10M17 7l-4 10M7 6h10', href: '/graph/' },
-  { status: 'in progress', color: '#F5B454', title: 'Odor decoder from LFP', body: 'A CNN that guesses which odor was presented from a few hundred milliseconds of bulb recordings. Demo with confusion matrix coming.', icon: 'M3 12h3l2-6 4 12 2-6h7' },
-  { status: 'planned', color: '#8B96A3', title: 'Spectrogram explorer', body: 'Drop a CSV of EEG or LFP, pick a window and a filter band, and watch theta, beta and gamma light up. Nothing leaves your browser.', icon: 'M3 4h18v16H3zM7 16v-4M11 16V8M15 16v-6M19 16v-2' },
-  { status: 'planned', color: '#8B96A3', title: 'Code snippets for neural data', body: 'Tiny, copy-pasteable Python recipes: bandpass, Hilbert phase, spike detection, epoching. The stuff I keep rewriting.', icon: 'M8 6 3 12l5 6M16 6l5 6-5 6M13.5 4l-3 16' },
+  { status: 'live', title: 'Knowledge graph', body: 'Every note a neuron, every shared concept a synapse. Spikes travel through a connectome of my reading.', href: '/graph/' },
+  { status: 'in progress', title: 'Odor decoder from LFP', body: 'A CNN that guesses which odor was presented from a few hundred milliseconds of bulb recordings.' },
+  { status: 'planned', title: 'Spectrogram explorer', body: 'Drop a CSV of EEG/LFP, pick a window and band, watch theta, beta and gamma light up. Nothing leaves your browser.' },
+  { status: 'planned', title: 'Neural-data snippets', body: 'Copy-pasteable Python: bandpass, Hilbert phase, spike detection, epoching. The stuff I keep rewriting.' },
 ];
-const contacts = [
-  { label: 'email', value: '[YOUR EMAIL]', href: 'mailto:you@example.com' },
-  { label: 'scholar', value: '[GOOGLE SCHOLAR]', href: '#about' },
-  { label: 'github', value: '[GITHUB]', href: '#about' },
-  { label: 'orcid', value: '[ORCID]', href: '#about' },
-  { label: 'rss', value: '/rss.xml', href: '/rss.xml' },
+const links = [
+  { label: 'github', href: 'https://github.com/maasker' },
+  { label: 'scholar', href: '#contact' },
+  { label: 'cv', href: 'https://cv.imatin.dev' },
+  { label: 'imatin.dev', href: 'https://imatin.dev' },
 ];
 ---
 <Base>
-  <Hero />
-
-  <section id="notes" class="container section" style="padding-top: 96px">
-    <div class="head-row">
-      <div class="section-head" style="margin-bottom: 0">
-        <span class="eyebrow">01 / reading notes</span>
-        <h2 class="h2">Papers I read, in plain words.</h2>
+  <div class="frame">
+    <!-- ============ HERO ============ -->
+    <section class="hero">
+      <div class="id">
+        <p class="kicker mono">// neuroengineering · olfaction · istanbul</p>
+        <h1 class="name serif"><span class="glitch" data-text="Matin">Matin</span> <em>Hassanloo</em><span class="dot">.</span></h1>
+        <p class="typed mono" aria-label="Currently decoding odors, spikes and signals"><span class="mint">❯</span> currently decoding: <span id="typed" class="amber" aria-hidden="true"></span><span class="caret" aria-hidden="true"></span></p>
+        <p class="lede">I decode <strong>smells from brain signals</strong>, build <strong>olfactory neural interfaces</strong>, and ship small sharp tools on the side: <strong>Telegram bots</strong> and <strong>security</strong> experiments. This is my lab notebook, in public.</p>
+        <div class="pills"><span class="pill">olfaction</span><span class="pill">neural interfaces</span><span class="pill">istanbul</span></div>
+        <div class="idlinks mono">{links.map((l) => <a href={l.href}>{l.label} ↗</a>)}</div>
       </div>
-      <a class="mono all-link" href="/notes/">all notes →</a>
-    </div>
-    <NoteGrid notes={notes} />
-  </section>
+      <div class="shell" id="terminal"><Terminal autorun height={430} /></div>
+    </section>
 
-  <section id="tools" class="container section">
-    <div class="section-head">
-      <span class="eyebrow">02 / tools</span>
-      <h2 class="h2">Small instruments for big signals.</h2>
-      <p>Interactive things I build to see data, teach ideas, or check my own intuition. Everything runs in your browser.</p>
-    </div>
-    <LifSimulator />
-    <div class="grid-cards" style="margin-top: 16px">
-      {tools.map((t) => (
-        <article class="card" style="position: relative">
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke={t.color === '#8B96A3' ? '#6EE7C8' : t.color} stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d={t.icon}></path></svg>
-          <span class="mono" style={`font-size: 12px; color: ${t.color}`}>{t.status}</span>
-          <h3>{t.href ? <a class="stretched" href={t.href}>{t.title} →</a> : t.title}</h3>
-          <p>{t.body}</p>
-        </article>
-      ))}
-    </div>
-  </section>
+    <!-- ============ 01 SIGNAL ============ -->
+    <section class="sec" aria-labelledby="s-signal">
+      <div class="sec__head"><h2 id="s-signal" class="sec__title">The <em>signal</em></h2><span class="sec__meta">01 · olfactory bulb · live</span></div>
+      <Signal />
+    </section>
 
-  <section id="play" class="container section">
-    <div class="section-head">
-      <span class="eyebrow">03 / play</span>
-      <h2 class="h2">Games for people who think in spikes.</h2>
-      <p>Two small games about how brains and electrodes see the world. One is about reading the olfactory code, the other about cleaning up a messy recording.</p>
-    </div>
-    <div class="tabs mono" role="tablist" aria-label="Games">
-      <button type="button" role="tab" id="tab-odor" aria-controls="panel-odor" aria-selected="true" data-tab="odor">Odor Decoder</button>
-      <button type="button" role="tab" id="tab-sorter" aria-controls="panel-sorter" aria-selected="false" data-tab="sorter">Spike Sorter <span class="new">new</span></button>
-    </div>
-    <div role="tabpanel" id="panel-odor" aria-labelledby="tab-odor">
-      <p class="game-blurb">Each odor lights up its own pattern of glomeruli. You get one noisy sniff. Decode it. Noise rises every level, and from level 4 the reference maps disappear.</p>
-      <OdorDecoder />
-    </div>
-    <div role="tabpanel" id="panel-sorter" aria-labelledby="tab-sorter" hidden>
-      <p class="game-blurb">Twenty noisy waveforms from one electrode, three neurons hiding in them. Sort them by shape, then see your clusters in feature space.</p>
-      <SpikeSorter />
-    </div>
-  </section>
+    <!-- ============ 02 ACTIVITY ============ -->
+    <section class="sec" aria-labelledby="s-act">
+      <div class="sec__head"><h2 id="s-act" class="sec__title">Live <em>activity</em></h2><span class="sec__meta">02 · reading · topics · github</span></div>
+      <Activity />
+    </section>
 
-  <section id="terminal" class="container section">
-    <div class="section-head">
-      <span class="eyebrow">04 / terminal</span>
-      <h2 class="h2">ssh guest@metin.lab</h2>
-      <p>A tiny shell into the lab. Type <code class="mono" style="color: var(--mint)">help</code> to see what it knows. Some commands are hidden.</p>
-    </div>
-    <Terminal />
-  </section>
-
-  <section id="publications" class="container section">
-    <div class="section-head">
-      <span class="eyebrow">05 / publications</span>
-      <h2 class="h2">Things with a DOI (or soon).</h2>
-    </div>
-    <ul class="pubs">
-      {pubs.map((p) => (
-        <li class="pub">
-          <span class="mono pub__year">{p.data.year}</span>
-          <div class="pub__main">
-            {p.data.url ? <a class="pub__title" href={p.data.url}>{p.data.title}</a> : <span class="pub__title">{p.data.title}</span>}
-            <span class="pub__venue">{p.data.venue}</span>
-          </div>
-          <span class="badge" style={`color: ${kindColor[p.data.kind]}; border-color: ${kindColor[p.data.kind]}44`}>{p.data.kind}</span>
-        </li>
-      ))}
-    </ul>
-  </section>
-
-  <section id="about" class="container section" style="padding-bottom: 96px">
-    <div class="about">
-      <div class="about__text">
-        <span class="eyebrow">06 / about</span>
-        <h2 class="h2" style="font-size: clamp(28px, 3.4vw, 38px)">Engineer by training, neuroscientist by obsession.</h2>
-        <p>I teach Object-Oriented Programming (Java) and C at Istanbul Medipol University. My research sits where engineering meets computational neuroscience: olfactory neural interfaces, neural signal processing, and deep learning on recordings from the brain.</p>
-        <p>This site is my lab notebook in public. If something here sparks an idea, write to me.</p>
+    <!-- ============ 03 WRITING ============ -->
+    <section class="sec" id="notes" aria-labelledby="s-writing">
+      <div class="sec__head"><h2 id="s-writing" class="sec__title">Notes <em>&amp;</em> lab log</h2><span class="sec__meta">03 · <a href="/notes/">all notes ↗</a> · <a href="/rss.xml">rss ↗</a></span></div>
+      <div class="cells writing">
+        <ol class="rows">
+          {notes.map((n) => (
+            <li class="row">
+              <div class="row__meta mono"><span class={`tag tag--${tagSlug(n.data.tag)}`}>{n.data.tag}</span><span>{n.data.date.toISOString().slice(0, 10).replace(/-/g, ' · ')}</span><span>{n.data.minutes} min</span></div>
+              <h3><a class="note__link" href={`/notes/${n.id}/`}>{n.data.title}</a></h3>
+              <p>{n.data.summary}</p>
+              <span class="row__src mono">{n.data.authors} · {n.data.venue} {n.data.year}</span>
+            </li>
+          ))}
+        </ol>
+        <div class="cell lablog">
+          <div class="cell__label"><span>$ git log --oneline</span><a href="/now/">/now ↗</a></div>
+          <ol class="log mono">
+            {log.map((c, i) => (
+              <li>
+                <span class="h">{c.hash}</span>
+                <span class="m"><b style={`color:${logColor[c.type] ?? 'var(--text-2)'}`}>{c.type}:</b> {c.msg}{i === 0 && <i> (HEAD)</i>}</span>
+                <span class="d">{c.date.slice(5)}</span>
+              </li>
+            ))}
+          </ol>
+          <p class="mono muted hint">j / k to jump between notes</p>
+        </div>
       </div>
-      <div class="contact mono">
-        <span class="muted" style="font-size: 12px">$ cat contact.txt</span>
-        {contacts.map((c) => (
-          <a href={c.href}><span class="muted">{c.label}</span><span>{c.value}</span></a>
+    </section>
+
+    <!-- ============ 04 INSTRUMENTS ============ -->
+    <section class="sec" id="instruments" aria-labelledby="s-tools">
+      <div class="sec__head"><h2 id="s-tools" class="sec__title">Instruments</h2><span class="sec__meta">04 · runs in your browser</span></div>
+      <div class="flush"><LifSimulator /></div>
+      <div class="cells tools">
+        {tools.map((t) => (
+          <article class="cell tool">
+            <div class="cell__label"><span class:list={{ live: t.status === 'live' }}>{t.status}</span><span>{t.href ? '↗' : '·'}</span></div>
+            <h3 class="serif">{t.href ? <a class="stretch" href={t.href}>{t.title}</a> : t.title}</h3>
+            <p>{t.body}</p>
+          </article>
         ))}
       </div>
-    </div>
-  </section>
+    </section>
+
+    <!-- ============ 05 PLAY ============ -->
+    <section class="sec" id="play" aria-labelledby="s-play">
+      <div class="sec__head"><h2 id="s-play" class="sec__title">Play <em>with</em> spikes</h2><span class="sec__meta">05 · two games</span></div>
+      <div class="sec__body">
+        <div class="tabs mono" role="tablist" aria-label="Games">
+          <button type="button" role="tab" id="tab-odor" aria-controls="panel-odor" aria-selected="true" data-tab="odor">Odor Decoder</button>
+          <button type="button" role="tab" id="tab-sorter" aria-controls="panel-sorter" aria-selected="false" data-tab="sorter">Spike Sorter</button>
+        </div>
+        <div role="tabpanel" id="panel-odor" aria-labelledby="tab-odor">
+          <p class="blurb">Each odor lights up its own pattern of glomeruli. One noisy sniff. Decode it. Noise rises every level; from level 4 the reference maps disappear.</p>
+          <OdorDecoder />
+        </div>
+        <div role="tabpanel" id="panel-sorter" aria-labelledby="tab-sorter" hidden>
+          <p class="blurb">Twenty noisy waveforms, three neurons hiding in them. Sort by shape, then see your clusters in feature space.</p>
+          <SpikeSorter />
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 06 OPS ============ -->
+    <section class="sec ops" aria-labelledby="s-ops">
+      <div class="sec__head"><h2 id="s-ops" class="sec__title">Side <em>quests</em></h2><span class="sec__meta">06 · <a href="/ops/">enter /ops ↗</a></span></div>
+      <div class="cells">
+        <a class="cell opscell" href="/ops/">
+          <div class="cell__label"><span>root@ops:~#</span><span class="red">● restricted</span></div>
+          <p class="serif optitle">Telegram bots, security experiments &amp; CTF writeups.</p>
+          <p class="mono muted small">different room, same coffee. accent switches to red.</p>
+        </a>
+        {ops.map((o) => (
+          <a class="cell opscell" href={`/ops/${o.id}/`}>
+            <div class="cell__label"><span>{o.data.kind}</span><span>{o.data.date.toISOString().slice(0, 10)}</span></div>
+            <p class="serif optitle">{o.data.title}</p>
+            <p class="muted small">{o.data.summary}</p>
+          </a>
+        ))}
+      </div>
+    </section>
+
+    <!-- ============ 07 PUBLICATIONS ============ -->
+    <section class="sec" id="publications" aria-labelledby="s-pubs">
+      <div class="sec__head"><h2 id="s-pubs" class="sec__title">Publications</h2><span class="sec__meta">07 · with a doi, or soon</span></div>
+      <ol class="pubs">
+        {pubs.map((p, i) => (
+          <li class="pub">
+            <span class="pub__n mono">[{String(i + 1).padStart(2, '0')}]</span>
+            <div class="pub__main">
+              {p.data.url ? <a class="pub__title serif" href={p.data.url}>{p.data.title}</a> : <span class="pub__title serif">{p.data.title}</span>}
+              <span class="pub__venue">{p.data.venue} · {p.data.year}</span>
+              <div class="pub__badges mono">
+                <span class="badge" style={`color:${kindColor[p.data.kind]};border-color:currentColor`}>{p.data.kind}</span>
+                {p.data.badges.map((b) => <span class="badge" style="color:var(--text-2);border-color:var(--line-3)">{b}</span>)}
+              </div>
+            </div>
+            {p.data.bibtex ? <button type="button" class="btn bib" data-bib={p.data.bibtex}>copy .bib</button> : <span class="mono faint small">.bib soon</span>}
+          </li>
+        ))}
+      </ol>
+    </section>
+
+    <!-- ============ 08 TIMELINE ============ -->
+    <section class="sec" aria-labelledby="s-time">
+      <div class="sec__head"><h2 id="s-time" class="sec__title">Timeline</h2><span class="sec__meta">08 · a running log</span></div>
+      <ol class="timeline">
+        {timeline.map((t) => (
+          <li>
+            <span class="t__year serif">{t.year}</span>
+            <span class="t__node" aria-hidden="true"></span>
+            <div><b class="serif">{t.title}</b><p>{t.body}</p></div>
+          </li>
+        ))}
+      </ol>
+    </section>
+
+    <!-- ============ 09 CONTACT ============ -->
+    <section class="sec" id="contact" aria-labelledby="s-contact">
+      <div class="sec__head"><h2 id="s-contact" class="sec__title">Open a <em>channel</em></h2><span class="sec__meta">09 · $ cat contact.txt</span></div>
+      <div class="cells">
+        <div class="cell about">
+          <p class="serif quote">Engineer by training, neuroscientist by obsession, hacker by night.</p>
+          <p>My research sits where engineering meets computational neuroscience: olfactory neural interfaces, neural signal processing, and deep learning on recordings from the brain. If something here sparks an idea (collaboration, data analysis, a bot, a bug), write to me.</p>
+        </div>
+        <div class="cell contact mono">
+          {[['email', '[YOUR EMAIL]', 'mailto:YOUR_EMAIL@example.com'], ['scholar', '[GOOGLE SCHOLAR]', '#contact'], ['github', 'maasker', 'https://github.com/maasker'], ['orcid', '[ORCID]', '#contact'], ['cv', 'cv.imatin.dev', 'https://cv.imatin.dev']].map(([k, v, h]) => (
+            <a href={h}><span class="muted">{k}</span><span>{v}</span></a>
+          ))}
+        </div>
+      </div>
+    </section>
+  </div>
 </Base>
 
 <style>
-  .stretched { color: var(--text); }
-  .stretched::after { content: ''; position: absolute; inset: 0; border-radius: inherit; }
-  .stretched:hover { color: var(--mint); }
-  .tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
-  .tabs button { min-height: 42px; padding: 0 16px; border-radius: 10px; border: 1px solid var(--line-3); background: transparent; color: var(--text-2); font-family: var(--font-mono); font-size: 13px; }
-  .tabs button[aria-selected='true'] { background: var(--mint); border-color: var(--mint); color: var(--mint-ink); }
-  .new { margin-left: 6px; padding: 1px 6px; border-radius: 5px; background: var(--amber); color: #1A1204; font-size: 10px; }
-  .game-blurb { margin: 0 0 16px; color: var(--text-2); max-width: 720px; }
-  .head-row { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 16px; margin-bottom: 28px; }
-  .all-link { font-size: 13px; padding: 10px 0; }
-  .pubs { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--line-2); }
-  .pub { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 24px; padding: 22px 0; border-bottom: 1px solid var(--line-2); }
-  .pub__year { flex: 0 0 90px; font-size: 13px; color: var(--muted); }
-  .pub__main { flex: 999 1 420px; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
-  .pub__title { font-family: var(--font-display); font-size: 19px; font-weight: 500; line-height: 1.3; color: var(--text); }
+  /* hero */
+  .hero { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 520px), 1fr)); border-bottom: 1px solid var(--line); }
+  .id { padding: clamp(36px, 6vw, 72px) var(--pad); display: flex; flex-direction: column; gap: 20px; justify-content: center; border-right: 1px solid var(--line); }
+  .kicker { margin: 0; font-size: 12px; color: var(--mint); letter-spacing: .1em; }
+  .name { margin: 0; font-weight: 400; font-size: clamp(64px, 9vw, 128px); line-height: .88; letter-spacing: -0.02em; }
+  .name em { font-style: italic; }
+  .name .dot { color: var(--mint); text-shadow: 0 0 24px rgba(var(--mint-rgb), .6); }
+  .typed { margin: 0; font-size: 14px; color: var(--muted); min-height: 22px; }
+  .caret { display: inline-block; width: 8px; height: 16px; margin-left: 2px; vertical-align: -3px; background: var(--mint); animation: blink 1s steps(1) infinite; }
+  .lede { margin: 0; font-size: 17px; color: var(--text-2); max-width: 52ch; }
+  .lede strong { color: var(--text); font-weight: 500; }
+  .pills { display: flex; flex-wrap: wrap; gap: 8px; }
+  .idlinks { display: flex; flex-wrap: wrap; gap: 4px 22px; font-size: 12px; letter-spacing: .12em; text-transform: uppercase; }
+  .idlinks a { color: var(--text-2); padding: 8px 0; }
+  .idlinks a:hover { color: var(--mint); }
+  .shell { min-width: 0; display: flex; flex-direction: column; }
+  .shell :global(.term) { flex: 1; }
+
+  /* writing */
+  .writing { grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr); }
+  @media (max-width: 900px) { .writing { grid-template-columns: 1fr; } }
+  .rows { list-style: none; margin: 0; padding: 0; }
+  .row { position: relative; padding: 22px var(--pad); border-bottom: 1px solid var(--line); transition: background .15s; }
+  .row:last-child { border-bottom: none; }
+  .row:hover { background: var(--surface); }
+  .row__meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; font-size: 11px; color: var(--muted); letter-spacing: .08em; }
+  .row h3 { margin: 10px 0 6px; font-family: var(--font-serif); font-weight: 400; font-size: 28px; line-height: 1.12; }
+  .note__link { color: var(--text); }
+  .note__link::after { content: ''; position: absolute; inset: 0; }
+  .row:hover .note__link, .note__link:focus-visible { color: var(--mint); }
+  .note__link:focus-visible { outline: none; }
+  .row:has(.note__link:focus-visible) { outline: 1px solid var(--mint); outline-offset: -1px; }
+  .row p { margin: 0 0 8px; color: var(--text-2); font-size: 15px; max-width: 70ch; }
+  .row__src { font-size: 11px; color: var(--faint); }
+  .log { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; font-size: 12px; }
+  .log li { display: grid; grid-template-columns: 62px 1fr auto; gap: 10px; align-items: baseline; }
+  .log .h { color: var(--amber); }
+  .log .m { color: var(--text-2); }
+  .log .m b { font-weight: 400; }
+  .log .m i { color: var(--blue); font-style: normal; }
+  .log .d { color: var(--faint); }
+  .hint { font-size: 11px; margin: 20px 0 0; }
+  .lablog .cell__label a { color: var(--mint); }
+
+  /* instruments */
+  .flush :global(.panel) { border: none; border-bottom: 1px solid var(--line); background: transparent; }
+  .tools .tool { position: relative; }
+  .tool h3 { margin: 0 0 8px; font-weight: 400; font-size: 26px; line-height: 1.15; }
+  .tool p { margin: 0; color: var(--text-2); font-size: 15px; }
+  .stretch { color: var(--text); }
+  .stretch::after { content: ''; position: absolute; inset: 0; }
+  .tool:hover { background: var(--surface); }
+  .tool:hover .stretch { color: var(--mint); }
+
+  /* play */
+  .tabs { display: flex; flex-wrap: wrap; gap: 0; margin-bottom: 18px; border: 1px solid var(--line-3); width: max-content; max-width: 100%; }
+  .tabs button { min-height: 42px; padding: 0 18px; border: none; border-right: 1px solid var(--line-3); background: transparent; color: var(--text-2); font-family: var(--font-mono); font-size: 12px; letter-spacing: .1em; text-transform: uppercase; }
+  .tabs button:last-child { border-right: none; }
+  .tabs button[aria-selected='true'] { background: var(--mint); color: var(--mint-ink); }
+  .blurb { margin: 0 0 16px; color: var(--text-2); max-width: 720px; }
+  #play :global(.panel) { border-radius: 0; }
+
+  /* ops teaser */
+  .ops { --ops: #FF4D6D; }
+  .opscell { display: block; color: inherit; background: repeating-linear-gradient(135deg, transparent 0 14px, rgba(255,77,109,.025) 14px 15px); transition: background .15s; }
+  .opscell:hover { background-color: #140A0D; color: inherit; }
+  .opscell .cell__label span:first-child { color: var(--ops); }
+  .red { color: var(--ops); }
+  .optitle { font-size: 26px; line-height: 1.15; margin: 0 0 8px; color: var(--text); }
+  .opscell:hover .optitle { color: var(--ops); }
+  .small { font-size: 12px; margin: 0; }
+
+  /* publications */
+  .pubs { list-style: none; margin: 0; padding: 0; }
+  .pub { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 24px; padding: 22px var(--pad); border-bottom: 1px solid var(--line); }
+  .pub:last-child { border-bottom: none; }
+  .pub__n { color: var(--faint); font-size: 12px; }
+  .pub__main { flex: 999 1 420px; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+  .pub__title { font-size: 26px; line-height: 1.15; color: var(--text); }
   a.pub__title:hover { color: var(--mint); }
   .pub__venue { font-size: 14px; color: var(--muted); }
-  .about { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr)); gap: 40px; padding: clamp(28px, 4vw, 48px); border: 1px solid var(--line-2); border-radius: 20px; background: var(--surface); }
-  .about__text { display: flex; flex-direction: column; gap: 16px; }
-  .about__text p { margin: 0; color: var(--text-2); }
-  .contact { display: flex; flex-direction: column; gap: 10px; font-size: 14px; }
-  .contact a { display: flex; justify-content: space-between; align-items: center; gap: 12px; min-height: 48px; padding: 0 16px; border: 1px solid var(--line-2); border-radius: 10px; background: var(--surface-2); }
-  .contact a:hover { border-color: #2E3944; }
+  .pub__badges { display: flex; flex-wrap: wrap; gap: 6px; }
+
+  /* timeline */
+  .timeline { list-style: none; margin: 0; padding: 28px var(--pad) 36px; display: grid; gap: 0; }
+  .timeline li { display: grid; grid-template-columns: 96px 20px 1fr; gap: 16px; align-items: start; padding-bottom: 28px; position: relative; }
+  .timeline li::before { content: ''; position: absolute; left: 121px; top: 12px; bottom: -4px; width: 1px; background: var(--line-3); }
+  .timeline li:last-child::before { display: none; }
+  .t__year { font-size: 30px; line-height: 1; color: var(--mint); }
+  .t__node { width: 11px; height: 11px; margin: 8px 0 0 4px; border: 1px solid var(--mint); background: var(--bg); box-shadow: 0 0 10px rgba(var(--mint-rgb), .5); position: relative; z-index: 1; }
+  .timeline b { font-weight: 400; font-size: 24px; }
+  .timeline p { margin: 4px 0 0; color: var(--text-2); font-size: 15px; }
+  @media (max-width: 560px) { .timeline li { grid-template-columns: 64px 16px 1fr; gap: 10px; } .timeline li::before { left: 79px; } .t__year { font-size: 22px; } }
+
+  /* contact */
+  .quote { font-size: clamp(28px, 3.4vw, 40px); line-height: 1.1; margin: 0 0 18px; }
+  .about p:last-child { margin: 0; color: var(--text-2); }
+  .contact { display: flex; flex-direction: column; gap: 0; font-size: 13px; padding: 0 !important; }
+  .contact a { display: flex; justify-content: space-between; gap: 12px; min-height: 56px; align-items: center; padding: 0 var(--pad); border-bottom: 1px solid var(--line); color: var(--text); }
+  .contact a:last-child { border-bottom: none; }
+  .contact a:hover { background: var(--surface); color: var(--mint); }
 </style>
 
 <script>
+  // typed line
+  const typed = document.getElementById('typed');
+  const words = ['odors from LFP', 'spike trains', 'gamma bursts', 'one sniff at a time', 'the olfactory code'];
+  if (typed) {
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) typed.textContent = words[0];
+    else {
+      let tw = 0;
+      setInterval(() => {
+        const w = words[Math.floor(tw / 46) % words.length], pos = tw % 46;
+        typed.textContent = w.slice(0, pos < 30 ? Math.min(pos, w.length) : Math.max(0, w.length - (pos - 30) * 2));
+        tw++;
+      }, 90);
+    }
+  }
+  // game tabs
   const tabs = [...document.querySelectorAll<HTMLButtonElement>('[data-tab]')];
-  const select = (t: HTMLButtonElement) => {
-    tabs.forEach((x) => {
-      const on = x === t;
-      x.setAttribute('aria-selected', String(on));
-      x.tabIndex = on ? 0 : -1;
-      document.getElementById(x.getAttribute('aria-controls')!)!.hidden = !on;
-    });
-  };
+  const select = (t: HTMLButtonElement) => tabs.forEach((x) => {
+    const on = x === t;
+    x.setAttribute('aria-selected', String(on)); x.tabIndex = on ? 0 : -1;
+    document.getElementById(x.getAttribute('aria-controls')!)!.hidden = !on;
+  });
   tabs.forEach((t, i) => {
     t.tabIndex = i === 0 ? 0 : -1;
     t.addEventListener('click', () => select(t));
     t.addEventListener('keydown', (e) => {
       if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
-      const n = tabs[(i + (e.key === 'ArrowRight' ? 1 : tabs.length - 1)) % tabs.length];
-      select(n); n.focus();
+      const n = tabs[(i + (e.key === 'ArrowRight' ? 1 : tabs.length - 1)) % tabs.length]; select(n); n.focus();
     });
   });
   if (location.hash === '#sorter') select(tabs[1]);
+  // copy BibTeX
+  document.querySelectorAll<HTMLButtonElement>('[data-bib]').forEach((b) => b.addEventListener('click', async () => {
+    try { await navigator.clipboard.writeText(b.dataset.bib!); b.textContent = 'copied ✓'; } catch { b.textContent = 'copy failed'; }
+    setTimeout(() => (b.textContent = 'copy .bib'), 1800);
+  }));
 </script>

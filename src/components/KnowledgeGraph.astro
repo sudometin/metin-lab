@@ -39,15 +39,15 @@ const legend = [
 </div>
 
 <style>
-  .kg { border: 1px solid var(--line-2); border-radius: 16px; background: #0B0E12; overflow: hidden; }
+  .kg { border: 1px solid var(--line-2); border-radius: 0; background: #0B0E12; overflow: hidden; }
   .kg__bar { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px 24px; padding: 12px 16px; border-bottom: 1px solid var(--line); background: #0D1115; }
   .kg__search { display: flex; align-items: center; gap: 10px; flex: 1 1 280px; font-size: 13px; }
-  .kg__search input { flex: 1; min-width: 0; min-height: 36px; padding: 0 12px; border-radius: 8px; border: 1px solid var(--line-3); background: var(--surface-2); color: var(--text); font: inherit; }
+  .kg__search input { flex: 1; min-width: 0; min-height: 36px; padding: 0 12px; border-radius: 0; border: 1px solid var(--line-3); background: var(--surface-2); color: var(--text); font: inherit; }
   .kg__legend { display: flex; flex-wrap: wrap; gap: 16px; font-size: 12px; color: var(--muted); }
   .kg__legend i { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 6px; }
   .kg__stage { position: relative; height: var(--h); }
   .kg__stage canvas { display: block; width: 100%; height: 100%; cursor: grab; touch-action: none; }
-  .kg__tip { position: absolute; pointer-events: none; padding: 6px 10px; border-radius: 8px; background: #141A20; border: 1px solid var(--line-3); font-size: 12px; color: var(--text); max-width: 260px; }
+  .kg__tip { position: absolute; pointer-events: none; padding: 6px 10px; border-radius: 0; background: #141A20; border: 1px solid var(--line-3); font-size: 12px; color: var(--text); max-width: 260px; }
   .kg__hint { position: absolute; left: 16px; bottom: 12px; font-size: 11px; color: var(--faint); pointer-events: none; }
   .kg__list { border-top: 1px solid var(--line); padding: 12px 16px; }
   .kg__list summary { cursor: pointer; font-size: 12px; color: var(--muted); min-height: 32px; display: flex; align-items: center; }

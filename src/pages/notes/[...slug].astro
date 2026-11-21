@@ -19,7 +19,7 @@ const older = all[idx + 1];
 const tagClass = `tag tag--${d.tag.toLowerCase().replace(/\s+/g, '-')}`;
 const written = d.date.toISOString().slice(0, 10);
 ---
-<Base title={`${d.title} — metin.lab`} description={d.summary}>
+<Base title={`${d.title} — MH://lab`} description={d.summary}>
   <article class="container note-page">
     <a class="mono back" href="/notes/">← cd ../notes</a>
     <header class="note-head">
@@ -67,7 +67,7 @@ const written = d.date.toISOString().slice(0, 10);
   .back { display: inline-block; font-size: 13px; padding: 10px 0; margin-bottom: 24px; }
   .note-head { display: flex; flex-direction: column; gap: 18px; padding-bottom: 32px; margin-bottom: 8px; border-bottom: 1px solid var(--line-2); }
   .note-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; font-size: 12px; }
-  h1 { margin: 0; font-family: var(--font-display); font-weight: 700; font-size: clamp(34px, 5vw, 52px); line-height: 1.05; letter-spacing: -0.03em; }
+  h1 { margin: 0; font-family: var(--font-display); font-weight: 400; font-size: clamp(34px, 5vw, 52px); line-height: 1.05; letter-spacing: -0.01em; }
   .lede { margin: 0; font-size: 19px; color: var(--text-2); }
   .paper { margin: 8px 0 0; padding: 18px 20px; border: 1px solid var(--line-2); border-radius: 12px; background: var(--surface); display: grid; gap: 8px; font-size: 13px; }
   .paper div { display: grid; grid-template-columns: 80px 1fr; gap: 12px; }

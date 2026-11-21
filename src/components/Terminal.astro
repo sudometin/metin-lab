@@ -4,34 +4,40 @@ import rawLog from '../data/log.json';
 const log = rawLog.map((c) => ({ ...c, hash: commitHash(c.date + c.msg) }));
 
 // note slugs, titles and BibTeX, so the shell can `ls notes`, `open <slug>` and `bibtex <slug>`
-const notes = (await getNotes()).map((n) => ({ id: n.id, title: n.data.title, bib: bibtex(n) }));
-const chips = ['help', 'neofetch', 'ls notes', 'git log', 'fire'];
+const notes = (await getNotes()).map((n) => ({ id: n.id, title: n.data.title, bib: bibtex(n), date: n.data.date.toISOString().slice(0, 10) }));
+
+interface Props { autorun?: boolean; height?: number }
+const { autorun = false, height = 360 } = Astro.props;
+const chips = ['help', 'whoami', 'ls notes', 'git log', 'ops', '▸ fire'];
 ---
-<div class="term mono" id="terminal-app">
+<div class="term mono" id="terminal-app" data-autorun={autorun ? '1' : ''} style={`--term-h: ${height}px`}>
   <div class="term__bar">
-    <div class="term__dots" aria-hidden="true"><span></span><span></span><span></span></div>
-    <span class="term__title">guest@metin.lab: ~ — zsh</span>
-    <span class="term__size">80×24</span>
+    <div class="term__dots" aria-hidden="true"><span></span><span></span><span class="on"></span></div>
+    <span class="term__title">guest@lab.imatin.dev — zsh — 96×30</span>
   </div>
   <div class="term__out" data-out aria-live="polite"></div>
   <form class="term__in" data-form autocomplete="off">
-    <label for="term-input" class="term__prompt">guest@metin.lab<span>:~$</span></label>
+    <label for="term-input" class="term__prompt">guest@lab<span>:~$</span></label>
     <input id="term-input" data-input type="text" spellcheck="false" autocapitalize="off" placeholder="type a command…" />
   </form>
   <div class="term__chips">
     <span>try:</span>
-    {chips.map((c) => <button type="button" data-run={c}>{c}</button>)}
+    {chips.map((c) => <button type="button" data-run={c.replace('▸ ', '')}>{c}</button>)}
   </div>
   <script type="application/json" data-notes set:html={JSON.stringify({ notes, log })} />
 </div>
 
 <style>
-  .term { border: 1px solid var(--line-2); border-radius: var(--radius); background: #07090C; overflow: hidden; font-size: 14px; }
+  .term { position: relative; display: flex; flex-direction: column; height: 100%; background: #060709; overflow: hidden; font-size: 13.5px; }
+  .term::after { content: ''; position: absolute; inset: 0; pointer-events: none; background: radial-gradient(ellipse at 70% 0%, rgba(var(--mint-rgb), .07), transparent 60%); }
   .term__bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 16px; border-bottom: 1px solid var(--line); background: #0D1115; font-size: 12px; color: var(--muted); }
   .term__dots { display: flex; gap: 8px; }
-  .term__dots span { width: 11px; height: 11px; border-radius: 50%; background: #3A4450; }
-  .term__size { color: var(--faint); }
-  .term__out { padding: 16px 18px 8px; height: 360px; overflow-y: auto; display: flex; flex-direction: column; }
+  .term__dots span { width: 10px; height: 10px; background: #2A333D; }
+  .term__dots span.on { background: var(--mint); box-shadow: 0 0 8px var(--mint); }
+  .term__out { flex: 1; padding: 16px 18px 8px; min-height: var(--term-h); max-height: var(--term-h); overflow-y: auto; display: flex; flex-direction: column; }
+  .term__out > :global(*) { flex-shrink: 0; }
+  .term__out :global(.banner) { color: var(--mint); font-weight: 500; line-height: 1.15; text-shadow: 0 0 12px rgba(var(--mint-rgb), .45); white-space: pre; overflow: hidden; }
+  .term__out :global(.cmd b) { color: var(--mint); font-weight: 400; }
   .term__out :global(div) { white-space: pre-wrap; word-break: break-word; line-height: 1.55; color: var(--text-2); }
   .term__out :global(.cmd) { color: var(--text); }
   .term__out :global(.acc) { color: var(--mint); }
@@ -44,8 +50,8 @@ const chips = ['help', 'neofetch', 'ls notes', 'git log', 'fire'];
   .term__prompt span { color: var(--muted); }
   .term__in input { flex: 1; min-width: 0; min-height: 36px; background: transparent; border: none; outline: none; color: var(--text); font: inherit; caret-color: var(--mint); }
   .term__chips { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 12px 18px; border-top: 1px solid var(--line); background: #0D1115; font-size: 12px; color: var(--muted); }
-  .term__chips button { min-height: 34px; padding: 0 12px; border-radius: 8px; border: 1px solid var(--line-3); background: transparent; color: var(--text-2); font-family: var(--font-mono); font-size: 12px; }
-  .term__chips button:hover { color: var(--text); border-color: #3A4450; }
+  .term__chips button { min-height: 32px; padding: 0 10px; border: 1px solid var(--line-3); background: transparent; color: var(--text-2); font-family: var(--font-mono); font-size: 12px; }
+  .term__chips button:hover { color: var(--mint); border-color: var(--mint); }
 </style>
 
 <script>
@@ -91,7 +97,7 @@ const chips = ['help', 'neofetch', 'ls notes', 'git log', 'fire'];
     function run(raw: string) {
       const cmd = raw.trim();
       const low = cmd.toLowerCase();
-      line(`guest@metin.lab:~$ ${cmd}`, 'cmd');
+      line(`guest@lab:~$ ${cmd}`, 'cmd');
       if (cmd) { history.push(cmd); hi = history.length; }
 
       if (!low) {}
@@ -111,13 +117,17 @@ const chips = ['help', 'neofetch', 'ls notes', 'git log', 'fire'];
           '  keys            keyboard shortcuts',
           '  sniff           random olfaction fact',
           '  spike           print one action potential',
+          '  cat now.log     latest from the lab',
+          '  ops             side quests: bots & security',
           '  contact         how to reach me',
           '  clear           wipe the screen',
         ].forEach((l) => line(l));
       }
       else if (low === 'whoami') {
-        line('metin — instructor @ Istanbul Medipol University');
-        line('teaches OOP (Java) & C · researches olfactory neural interfaces & neural signal processing');
+        banner();
+        line('› Matin Hassanloo · neuroengineer', 'acc');
+        line('› olfactory neural interfaces · neural signal processing · deep learning on brain recordings');
+        line('› side quests: telegram bots · security → `ops`');
       }
       else if (low === 'ls' || low === 'ls -la' || low === 'ls -l') {
         line('drwxr-xr-x  notes/   tools/   play/   publications/   about/', 'acc');
@@ -143,13 +153,13 @@ const chips = ['help', 'neofetch', 'ls notes', 'git log', 'fire'];
       }
       else if (low === 'neofetch') {
         [
-          '     .---.        guest@metin.lab',
+          '     .---.        guest@lab',
           '    / o o \\       ---------------',
           '   |  (_)  |      OS: OlfactOS 26.11 (bulb edition)',
           '    \\_____/       Kernel: mitral-tufted 6.6',
           '   /|  |  |\\      Shell: zsh · Receptors: ~400 functional',
           '  / |  |  | \\     Rhythms: theta · beta · gamma',
-          '                  Languages: Java · C · Python',
+          '                  Side quests: bots · security (see `ops`)',
         ].forEach((l) => line(l, 'acc'));
       }
       else if (low === 'sniff') line(`» ${FACTS[Math.floor(Math.random() * FACTS.length)]}`, 'warm');
@@ -172,6 +182,9 @@ const chips = ['help', 'neofetch', 'ls notes', 'git log', 'fire'];
           else line(`bibtex: no such note: ${arg}`, 'err');
         }
       }
+      else if (low === 'cat now.log' || low === 'now.log') { nowLog(); }
+      else if (low === 'ops' || low === 'cd ops') { line('→ /ops · side quests: bots, security, CTFs', 'acc'); location.href = '/ops/'; }
+      else if (low === 'whois matin' || low === 'finger matin') { line('Login: matin   Name: Matin Hassanloo   Shell: /bin/zsh', 'acc'); line('Plan: decode smells from brain signals. ship small sharp tools. sleep (eventually).'); }
       else if (low === 'graph') { line('→ /graph', 'acc'); location.href = '/graph/'; }
       else if (low === 'now') { line('→ /now', 'acc'); location.href = '/now/'; }
       else if (low === 'fire' || low === 'ap') { line('depolarizing… threshold crossed. ⚡', 'acc'); w.metinLabFire?.(); }
@@ -188,8 +201,46 @@ const chips = ['help', 'neofetch', 'ls notes', 'git log', 'fire'];
       scroll();
     }
 
-    line('metin.lab shell v0.2 — last login from the olfactory bulb', 'dim');
-    line("type 'help' to list commands.", 'dim');
+    function banner() {
+      const b = document.createElement('div');
+      b.className = 'banner';
+      b.textContent = [
+        ' __  __    _  _____ ___ _  _ ',
+        '|  \\/  |  /_\\|_   _|_ _| \\| |',
+        '| |\\/| | / _ \\ | |  | || .` |',
+        '|_|  |_|/_/ \\_\\|_| |___|_|\\_|',
+      ].join('\n');
+      out.appendChild(b);
+    }
+    function nowLog() {
+      log.slice(0, 4).forEach((c) => line(`› ${c.msg}  [${c.date}]`, c.type === 'feat' ? 'out' : 'acc'));
+    }
+    const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
+    async function typeCmd(cmd: string) {
+      const d = document.createElement('div');
+      d.className = 'cmd';
+      out.appendChild(d);
+      for (let i = 1; i <= cmd.length; i++) { d.textContent = `$ ${cmd.slice(0, i)}`; await wait(22); }
+      scroll();
+    }
+    async function autorun() {
+      const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (reduceMotion) { banner(); line('› Matin Hassanloo · neuroengineer', 'acc'); nowLog(); return; }
+      await typeCmd('./whoami');
+      banner();
+      line('› Matin Hassanloo · neuroengineer · Istanbul', 'acc');
+      line(`› ${notes.length} notes · olfaction, signals & neural interfaces`);
+      await wait(250);
+      await typeCmd('cat now.log');
+      nowLog();
+      await wait(250);
+      await typeCmd('ls notes/ --latest');
+      notes.slice(0, 3).forEach((n) => link(`› ${n.date}  `, n.title, `/notes/${n.id}/`));
+      line("› type `help` · `open <note>` · ⌘K anywhere", 'dim');
+      scroll();
+    }
+    if (root.dataset.autorun) autorun();
+    else { line('MH://lab shell — last login from the olfactory bulb', 'dim'); line("type 'help' to list commands.", 'dim'); }
 
     form.addEventListener('submit', (e) => { e.preventDefault(); run(input.value); input.value = ''; });
     input.addEventListener('keydown', (e) => {

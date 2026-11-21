@@ -40,27 +40,27 @@
   .game { display: flex; flex-wrap: wrap; }
   .game__map { flex: 1 1 340px; min-width: 0; padding: 24px; display: flex; flex-direction: column; gap: 16px; border-right: 1px solid var(--line); }
   .game__row { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; font-size: 12px; color: var(--muted); }
-  .map { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px; padding: 16px; border-radius: 14px; background: var(--surface-2); border: 1px solid var(--line); width: 100%; max-width: 380px; align-self: center; }
+  .map { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px; padding: 16px; border-radius: 0; background: var(--surface-2); border: 1px solid var(--line); width: 100%; max-width: 380px; align-self: center; }
   .map :global(span), :global(.mini span) { display: block; aspect-ratio: 1; border-radius: 50%; transition: background .25s; }
   .lives { display: flex; gap: 6px; }
   .score { display: flex; gap: 20px; font-size: 13px; color: var(--muted); }
   .score b { font-weight: 400; font-size: 18px; color: var(--text); }
   .score b.amber { color: var(--amber); }
   .game__answers { flex: 999 1 480px; min-width: 0; padding: 24px; display: flex; flex-direction: column; gap: 16px; }
-  .game__answers h3 { margin: 0 0 16px; font-family: var(--font-display); font-size: 20px; font-weight: 500; }
+  .game__answers h3 { margin: 0 0 16px; font-family: var(--font-display); font-size: 20px; font-weight: 400; }
   .options { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 200px), 1fr)); gap: 12px; }
-  .options :global(button) { display: flex; align-items: center; gap: 14px; min-height: 64px; padding: 12px; border-radius: 12px; border: 1px solid var(--line-3); background: var(--surface-2); color: var(--text); text-align: left; }
+  .options :global(button) { display: flex; align-items: center; gap: 14px; min-height: 64px; padding: 12px; border-radius: 0; border: 1px solid var(--line-3); background: var(--surface-2); color: var(--text); text-align: left; }
   .options :global(button:hover) { border-color: #3A4450; }
   .options :global(button.is-correct) { border-color: var(--mint); background: var(--mint-bg); }
   .options :global(button.is-wrong) { border-color: var(--pink); background: #1E1218; }
   .options :global(.mini) { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 3px; width: 72px; flex: 0 0 72px; }
-  .options :global(.opt-name) { display: block; font-family: var(--font-display); font-size: 17px; font-weight: 500; }
+  .options :global(.opt-name) { display: block; font-family: var(--font-display); font-size: 17px; font-weight: 400; }
   .options :global(.opt-mol) { display: block; font-family: var(--font-mono); font-size: 11px; color: var(--muted); }
   .game__foot { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px; min-height: 48px; margin-top: 16px; }
   .msg { font-size: 14px; color: var(--muted); }
   .over { display: flex; flex-direction: column; gap: 14px; align-items: flex-start; }
   .over p { margin: 0; color: var(--text-2); }
-  .over__title { margin: 0 !important; font-family: var(--font-display); font-size: 34px !important; font-weight: 700 !important; letter-spacing: -0.02em; }
+  .over__title { margin: 0 !important; font-family: var(--font-display); font-size: 34px !important; font-weight: 400 !important; letter-spacing: -0.01em; }
   .mint { color: var(--mint); } .amber { color: var(--amber); } .pink { color: var(--pink); font-size: 13px; }
 </style>
 

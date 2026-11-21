@@ -5,7 +5,7 @@ export async function GET(context) {
   const notes = (await getCollection('notes', ({ data }) => !data.draft))
     .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
   return rss({
-    title: 'metin.lab — reading notes',
+    title: 'MH://lab — reading notes',
     description: 'Plain-words notes on olfaction, neural signals and neural interfaces.',
     site: context.site,
     items: notes.map((n) => ({

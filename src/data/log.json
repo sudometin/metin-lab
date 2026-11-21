@@ -1,7 +1,37 @@
 [
-  { "date": "2026-11-20", "type": "feat", "msg": "knowledge graph, spike sorter, command palette, /now" },
-  { "date": "2026-11-20", "type": "feat", "msg": "port site to Astro, notes as Markdown, RSS" },
-  { "date": "2026-11-20", "type": "feat", "msg": "terminal, status line, typed hero" },
-  { "date": "2026-11-20", "type": "feat", "msg": "Odor Decoder game" },
-  { "date": "2026-11-20", "type": "init", "msg": "metin.lab is born" }
+  {
+    "date": "2026-11-21",
+    "type": "feat",
+    "msg": "v0.4: lab redesign, live activity, /ops room"
+  },
+  {
+    "date": "2026-11-21",
+    "type": "read",
+    "msg": "6 starter notes: olfactory receptors → LFP origins → EEGNet → handwriting BCI"
+  },
+  {
+    "date": "2026-11-20",
+    "type": "feat",
+    "msg": "knowledge graph, spike sorter, command palette, /now"
+  },
+  {
+    "date": "2026-11-20",
+    "type": "feat",
+    "msg": "port site to Astro, notes as Markdown, RSS"
+  },
+  {
+    "date": "2026-11-20",
+    "type": "feat",
+    "msg": "terminal, status line, typed hero"
+  },
+  {
+    "date": "2026-11-20",
+    "type": "feat",
+    "msg": "Odor Decoder game"
+  },
+  {
+    "date": "2026-11-20",
+    "type": "init",
+    "msg": "MH://lab is born"
+  }
 ]

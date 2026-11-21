@@ -65,17 +65,17 @@ const units = [
   .scope { display: block; width: 100%; flex: 1 1 300px; min-height: 300px; }
   @media (max-width: 640px) { .scope { min-height: 200px; flex-basis: 200px; } .sorter__scope { padding: 16px; } }
   .sorter__side { flex: 1 1 340px; min-width: 0; padding: 24px; display: flex; flex-direction: column; gap: 16px; }
-  .sorter__side h3 { margin: 0 0 8px; font-family: var(--font-display); font-size: 20px; font-weight: 500; }
+  .sorter__side h3 { margin: 0 0 8px; font-family: var(--font-display); font-size: 20px; font-weight: 400; }
   .sorter__side p { margin: 0; color: var(--text-2); font-size: 15px; }
-  kbd { font-family: var(--font-mono); font-size: 12px; padding: 1px 6px; border: 1px solid var(--line-3); border-bottom-width: 2px; border-radius: 5px; color: var(--text); }
+  kbd { font-family: var(--font-mono); font-size: 12px; padding: 1px 6px; border: 1px solid var(--line-3); border-bottom-width: 2px; border-radius: 0; color: var(--text); }
   .units { display: flex; flex-direction: column; gap: 10px; }
-  .unit { display: flex; align-items: center; gap: 14px; min-height: 60px; padding: 8px 14px; border-radius: 12px; border: 1px solid var(--line-3); background: var(--surface-2); color: var(--text); text-align: left; transition: border-color .1s, transform .08s; }
+  .unit { display: flex; align-items: center; gap: 14px; min-height: 60px; padding: 8px 14px; border-radius: 0; border: 1px solid var(--line-3); background: var(--surface-2); color: var(--text); text-align: left; transition: border-color .1s, transform .08s; }
   .unit:not(:disabled):hover { border-color: var(--c); }
   .unit:not(:disabled):active { transform: scale(.98); }
   .unit:disabled { cursor: default; opacity: .7; }
   .unit svg { width: 96px; height: 44px; flex: 0 0 96px; }
   .unit span { display: flex; flex-direction: column; }
-  .unit b { font-family: var(--font-display); font-weight: 500; color: var(--c); }
+  .unit b { font-family: var(--font-display); font-weight: 400; color: var(--c); }
   .unit small { font-size: 11px; color: var(--muted); }
   .unit.flash-ok { border-color: var(--mint); background: var(--mint-bg); }
   .unit.flash-bad { border-color: var(--pink); background: #1E1218; }
@@ -84,7 +84,7 @@ const units = [
   .result { display: flex; flex-direction: column; gap: 10px; }
   .result__title { margin: 0 !important; font-size: 32px !important; font-weight: 700 !important; letter-spacing: -0.02em; }
   .feat { margin: 4px 0 0; }
-  .feat svg { width: 100%; height: auto; display: block; background: var(--surface-2); border: 1px solid var(--line); border-radius: 10px; }
+  .feat svg { width: 100%; height: auto; display: block; background: var(--surface-2); border: 1px solid var(--line); border-radius: 0; }
   .feat figcaption { font-size: 11px; margin-top: 6px; }
   .mint { color: var(--mint); }
 </style>

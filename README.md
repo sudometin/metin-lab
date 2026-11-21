@@ -1,7 +1,25 @@
-# metin.lab
+# MH://lab · lab.imatin.dev
 
 Personal research site: reading notes, tools, a game and a tiny shell, built around olfaction, neural signals and neural interfaces.
 Built with [Astro](https://astro.build): static HTML, no framework runtime, and vanilla JS only where something moves.
+
+
+## v0.4: redesign
+
+- **Design system:** Instrument Serif × JetBrains Mono, a boxed instrument-panel grid, CRT scanlines, numbered nav, a stack ticker in the footer. Tokens live in `src/styles/global.css`.
+- **Home** (`src/pages/index.astro`): split hero (name + autorunning shell that types `./whoami`, `cat now.log`, `ls notes/ --latest`) → 01 signal → 02 live activity → 03 notes & lab log → 04 instruments → 05 play → 06 side quests → 07 publications → 08 timeline → 09 contact.
+- **Live activity** (`src/components/Activity.astro`): 53-week reading heatmap, topic mix, and your latest public GitHub pushes (fetched in the browser, cached 10 min). Change the GitHub user with `<Activity github="…" />`.
+- **Lab log:** `src/data/log.json`. Use `type` to colour entries: `feat` (site), `read`, `exp`, `data`, `fix`. Newest first; the top 4 also show in the shell's `cat now.log`.
+- **Timeline:** `src/data/timeline.json` (fill in the `[YEAR]`s).
+- **Publication badges & BibTeX:** in `src/data/publications.json`, add `"badges": ["Q1", "Top 10%"]` and `"bibtex": "@article{…}"` to get a copy button.
+
+## /ops: side quests (bots, security, CTFs)
+
+- Red-accented room at `/ops`, with the same site and the same repo. Set by `<Base room="ops">`.
+- **Projects:** `src/data/ops-projects.json` (status: `live`, `building`, `planned`).
+- **Writeups:** Markdown in `src/content/ops/`. Frontmatter: `title`, `kind` (`bot|security|ctf|tool|log`), `summary`, `date`, `stack`, optional `repo`. Delete `hello-ops.md` once you have real ones.
+- **cipher-lab** (`src/components/CipherLab.astro`): a chainable recipe of base64, hex, url, binary, rot13, reverse, JWT decode, SHA-1/256, all client-side. Add an op by adding a key to `OPS` and a button to the list.
+- Want it at **ops.imatin.dev**? Cloudflare → imatin.dev → Rules → Redirect Rules: `ops.imatin.dev/*` → `https://lab.imatin.dev/ops/` (301), plus a proxied `AAAA ops 100::` DNS record.
 
 ## Run it
 

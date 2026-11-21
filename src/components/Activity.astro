@@ -1,0 +1,116 @@
+---
+// Live research activity: reading heatmap + topic mix (build time) and GitHub pushes (live, in the browser)
+import Heatmap from './Heatmap.astro';
+import { getNotes } from '../lib/notes';
+import { TAGS } from '../content.config';
+
+interface Props { github?: string }
+const { github = 'maasker' } = Astro.props;
+const notes = await getNotes();
+const counts = TAGS.map((t) => ({ t, n: notes.filter((x) => x.data.tag === t).length }));
+const total = notes.length || 1;
+const colors: Record<string, string> = { Olfaction: 'var(--mint)', 'Signal processing': 'var(--amber)', 'Machine learning': 'var(--blue)', BCI: 'var(--pink)' };
+const concepts = new Set(notes.flatMap((n) => n.data.concepts)).size;
+const authors = new Set(notes.flatMap((n) => n.data.authors.split(',').map((a) => a.trim()))).size;
+const span = notes.length ? `${Math.min(...notes.map((n) => n.data.year))}–${Math.max(...notes.map((n) => n.data.year))}` : '—';
+---
+<div class="cells act">
+  <div class="cell">
+    <div class="cell__label"><span>reading · 53 weeks</span><span class="live">build-time</span></div>
+    <Heatmap notes={notes} />
+  </div>
+  <div class="cell">
+    <div class="cell__label"><span>topic mix</span><span>{notes.length} notes</span></div>
+    <div class="big serif">{concepts}<small class="mono"> concepts</small></div>
+    <div class="stack" aria-hidden="true">
+      {counts.filter((c) => c.n).map((c) => <i style={`width:${(c.n / total) * 100}%;background:${colors[c.t]}`}></i>)}
+    </div>
+    <ul class="bars mono">
+      {counts.map((c) => (
+        <li><span>{c.t}</span><span class="track"><i style={`width:${(c.n / total) * 100}%;background:${colors[c.t]}`}></i></span><b>{Math.round((c.n / total) * 100)}%</b></li>
+      ))}
+    </ul>
+    <p class="mono muted small">{authors} authors · papers from {span}</p>
+  </div>
+  <div class="cell gh" data-gh={github}>
+    <div class="cell__label"><span>github · {github}</span><span class="live" data-gh-state>live</span></div>
+    <div class="big serif" data-gh-ago>…<small class="mono"> since last push</small></div>
+    <ul class="pushes mono" data-gh-list>
+      <li class="muted">connecting to api.github.com…</li>
+    </ul>
+    <p class="mono muted small" data-gh-meta></p>
+  </div>
+</div>
+
+<style>
+  .act :global(.heat) { border: none; padding: 0; background: none; }
+  .big { font-size: 56px; line-height: 1; margin-bottom: 14px; }
+  .big small { font-size: 12px; color: var(--muted); letter-spacing: .1em; text-transform: uppercase; }
+  .stack { display: flex; height: 8px; margin-bottom: 16px; gap: 2px; }
+  .stack i { display: block; height: 100%; }
+  .bars { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; font-size: 12px; }
+  .bars li { display: grid; grid-template-columns: 130px 1fr 40px; align-items: center; gap: 10px; color: var(--text-2); }
+  .bars .track { height: 3px; background: var(--line); }
+  .bars .track i { display: block; height: 100%; }
+  .bars b { font-weight: 400; color: var(--muted); text-align: right; }
+  .small { font-size: 11px; margin: 16px 0 0; }
+  .pushes { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; font-size: 12px; }
+  .pushes li { display: flex; justify-content: space-between; gap: 10px; color: var(--text-2); }
+  .pushes li span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .pushes li span:last-child { color: var(--muted); white-space: nowrap; }
+</style>
+
+<script>
+  const ago = (iso: string) => {
+    const s = (Date.now() - new Date(iso).getTime()) / 1000;
+    if (s < 3600) return `${Math.max(1, Math.round(s / 60))}m`;
+    if (s < 86400) return `${Math.round(s / 3600)}h`;
+    return `${Math.round(s / 86400)}d`;
+  };
+  document.querySelectorAll<HTMLElement>('[data-gh]').forEach(async (root) => {
+    const user = root.dataset.gh!;
+    const list = root.querySelector('[data-gh-list]')!;
+    const big = root.querySelector('[data-gh-ago]')!;
+    const meta = root.querySelector('[data-gh-meta]')!;
+    const state = root.querySelector('[data-gh-state]')!;
+    try {
+      // cache for 10 min: the public API allows only 60 requests/hour per visitor IP
+      const KEY = `mh.gh.${user}`;
+      let cached: any = null;
+      try { cached = JSON.parse(localStorage.getItem(KEY) || 'null'); } catch {}
+      let ev: any, prof: any;
+      if (cached && Date.now() - cached.t < 600000) ({ ev, prof } = cached);
+      else {
+        [ev, prof] = await Promise.all([
+          fetch(`https://api.github.com/users/${user}/events/public?per_page=40`).then((r) => (r.ok ? r.json() : Promise.reject(r.status))),
+          fetch(`https://api.github.com/users/${user}`).then((r) => (r.ok ? r.json() : null)),
+        ]);
+        try { localStorage.setItem(KEY, JSON.stringify({ t: Date.now(), ev, prof })); } catch {}
+      }
+      const pushes = (ev as any[]).filter((e) => e.type === 'PushEvent' || e.type === 'CreateEvent');
+      list.innerHTML = '';
+      if (!pushes.length) {
+        list.innerHTML = '<li><span>no public pushes lately · busy in private repos</span></li>';
+        big.firstChild!.textContent = '—';
+      } else {
+        big.firstChild!.textContent = ago(pushes[0].created_at);
+        for (const e of pushes.slice(0, 5)) {
+          const li = document.createElement('li');
+          const a = document.createElement('span');
+          const n = e.payload?.commits?.length ?? e.payload?.size;
+          a.textContent = `${e.type === 'PushEvent' ? `push${n ? ` ×${n}` : ''}` : 'create'} → ${e.repo.name.split('/')[1]}`;
+          const b = document.createElement('span');
+          b.textContent = `${ago(e.created_at)} ago`;
+          li.append(a, b);
+          list.appendChild(li);
+        }
+      }
+      if (prof) meta.textContent = `${prof.public_repos} public repos · ${prof.followers} followers`;
+    } catch {
+      state.textContent = 'offline';
+      state.classList.remove('live');
+      big.firstChild!.textContent = '—';
+      list.innerHTML = '<li><span>api.github.com unreachable (rate limit?) · retry later</span></li>';
+    }
+  });
+</script>

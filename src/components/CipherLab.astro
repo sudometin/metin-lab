@@ -1,0 +1,114 @@
+---
+// cipher-lab: a tiny CyberChef. Chain operations into a recipe; everything runs locally.
+const ops = [
+  ['b64e', 'base64 →'], ['b64d', '← base64'], ['hexe', 'hex →'], ['hexd', '← hex'],
+  ['urle', 'url →'], ['urld', '← url'], ['bin', 'binary →'], ['rot13', 'rot13'],
+  ['rev', 'reverse'], ['upper', 'UPPER'], ['jwt', 'jwt decode'], ['sha256', 'sha-256'], ['sha1', 'sha-1'],
+];
+---
+<div class="cl" id="cipher-lab">
+  <div class="cl__col">
+    <label class="cl__label mono" for="cl-in">input <span class="faint" data-cl-inlen>0 B</span></label>
+    <textarea id="cl-in" class="mono" spellcheck="false" placeholder="paste text, a JWT, hex…">hello, ops</textarea>
+    <div class="cl__label mono">operations <span class="faint">click to add to recipe</span></div>
+    <div class="cl__ops">
+      {ops.map(([k, l]) => <button type="button" class="mono" data-op={k}>{l}</button>)}
+    </div>
+  </div>
+  <div class="cl__col">
+    <div class="cl__label mono">recipe <button type="button" class="clr mono" data-cl-clear>clear</button></div>
+    <ol class="cl__recipe mono" data-cl-recipe aria-live="polite"><li class="faint">empty · output = input</li></ol>
+    <label class="cl__label mono" for="cl-out">output <span class="faint" data-cl-outlen>0 B</span></label>
+    <textarea id="cl-out" class="mono" readonly></textarea>
+    <div class="cl__foot mono"><button type="button" class="btn" data-cl-copy>copy output</button><span class="faint" data-cl-err></span></div>
+  </div>
+</div>
+
+<style>
+  .cl { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr)); }
+  .cl__col { padding: 22px var(--pad); display: flex; flex-direction: column; gap: 10px; border-right: 1px solid var(--line); min-width: 0; }
+  .cl__col:last-child { border-right: none; }
+  .cl__label { display: flex; justify-content: space-between; align-items: center; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+  textarea { width: 100%; min-height: 150px; resize: vertical; padding: 12px 14px; background: #060709; border: 1px solid var(--line-3); color: var(--text); font-size: 13px; line-height: 1.5; }
+  textarea:focus { outline: none; border-color: var(--mint); }
+  #cl-out { color: var(--mint); }
+  .cl__ops { display: flex; flex-wrap: wrap; gap: 6px; }
+  .cl__ops button, .clr { min-height: 34px; padding: 0 11px; border: 1px solid var(--line-3); background: transparent; color: var(--text-2); font-size: 12px; }
+  .cl__ops button:hover, .clr:hover { color: var(--mint); border-color: var(--mint); }
+  .clr { min-height: 26px; font-size: 10px; letter-spacing: .1em; }
+  .cl__recipe { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; min-height: 34px; font-size: 12px; }
+  .cl__recipe :global(li) { display: inline-flex; align-items: center; gap: 8px; padding: 6px 10px; border: 1px solid rgba(var(--mint-rgb), .45); background: var(--mint-bg); color: var(--mint); }
+  .cl__recipe :global(li.faint) { border-color: var(--line-3); background: none; color: var(--faint); }
+  .cl__recipe :global(button) { border: none; background: none; color: inherit; padding: 0 2px; font: inherit; opacity: .7; }
+  .cl__recipe :global(button:hover) { opacity: 1; }
+  .cl__foot { display: flex; align-items: center; gap: 14px; font-size: 12px; }
+  .faint { color: var(--faint); }
+</style>
+
+<script>
+  const root = document.getElementById('cipher-lab');
+  if (root) {
+    const $ = (s: string) => root.querySelector(s) as HTMLElement;
+    const inp = $('#cl-in') as HTMLTextAreaElement, out = $('#cl-out') as HTMLTextAreaElement;
+    const recipeEl = $('[data-cl-recipe]'), errEl = $('[data-cl-err]');
+    const labels: Record<string, string> = {};
+    root.querySelectorAll<HTMLButtonElement>('[data-op]').forEach((b) => (labels[b.dataset.op!] = b.textContent!));
+    let recipe: string[] = [];
+    const enc = new TextEncoder(), dec = new TextDecoder();
+    const bytesToB64 = (u: Uint8Array) => btoa(String.fromCharCode(...u));
+    const b64ToBytes = (s: string) => Uint8Array.from(atob(s.replace(/-/g, '+').replace(/_/g, '/').replace(/\s/g, '') + '==='.slice((s.length + 3) % 4)), (c) => c.charCodeAt(0));
+    const hex = (u: Uint8Array) => [...u].map((b) => b.toString(16).padStart(2, '0')).join('');
+    async function digest(alg: string, s: string) { return hex(new Uint8Array(await crypto.subtle.digest(alg, enc.encode(s)))); }
+    const OPS: Record<string, (s: string) => string | Promise<string>> = {
+      b64e: (s) => bytesToB64(enc.encode(s)),
+      b64d: (s) => dec.decode(b64ToBytes(s.trim())),
+      hexe: (s) => hex(enc.encode(s)),
+      hexd: (s) => { const c = s.replace(/[^0-9a-f]/gi, ''); if (c.length % 2) throw new Error('odd-length hex'); return dec.decode(Uint8Array.from(c.match(/../g) || [], (h) => parseInt(h, 16))); },
+      urle: (s) => encodeURIComponent(s),
+      urld: (s) => decodeURIComponent(s),
+      bin: (s) => [...enc.encode(s)].map((b) => b.toString(2).padStart(8, '0')).join(' '),
+      rot13: (s) => s.replace(/[a-z]/gi, (c) => { const b = c <= 'Z' ? 65 : 97; return String.fromCharCode(((c.charCodeAt(0) - b + 13) % 26) + b); }),
+      rev: (s) => [...s].reverse().join(''),
+      upper: (s) => s.toUpperCase(),
+      jwt: (s) => {
+        const parts = s.trim().split('.');
+        if (parts.length < 2) throw new Error('not a JWT (need header.payload.signature)');
+        const j = (p: string) => JSON.stringify(JSON.parse(dec.decode(b64ToBytes(p))), null, 2);
+        return `// header\n${j(parts[0])}\n\n// payload\n${j(parts[1])}\n\n// signature (not verified)\n${parts[2] ?? ''}`;
+      },
+      sha256: (s) => digest('SHA-256', s),
+      sha1: (s) => digest('SHA-1', s),
+    };
+    async function run() {
+      let v = inp.value;
+      errEl.textContent = '';
+      try { for (const op of recipe) v = await OPS[op](v); }
+      catch (e: any) { errEl.textContent = `✗ ${e?.message || 'invalid input for this step'}`; }
+      out.value = v;
+      $('[data-cl-inlen]').textContent = `${enc.encode(inp.value).length} B`;
+      $('[data-cl-outlen]').textContent = `${enc.encode(v).length} B`;
+    }
+    function renderRecipe() {
+      recipeEl.innerHTML = '';
+      if (!recipe.length) { const li = document.createElement('li'); li.className = 'faint'; li.textContent = 'empty · output = input'; recipeEl.appendChild(li); }
+      recipe.forEach((op, i) => {
+        const li = document.createElement('li');
+        li.textContent = `${i + 1}. ${labels[op]}`;
+        const x = document.createElement('button');
+        x.type = 'button'; x.textContent = '×'; x.setAttribute('aria-label', `Remove step ${i + 1}`);
+        x.addEventListener('click', () => { recipe.splice(i, 1); renderRecipe(); run(); });
+        li.appendChild(x);
+        recipeEl.appendChild(li);
+      });
+    }
+    root.querySelectorAll<HTMLButtonElement>('[data-op]').forEach((b) => b.addEventListener('click', () => { recipe.push(b.dataset.op!); renderRecipe(); run(); }));
+    $('[data-cl-clear]').addEventListener('click', () => { recipe = []; renderRecipe(); run(); });
+    $('[data-cl-copy]').addEventListener('click', async (e) => {
+      const b = e.currentTarget as HTMLButtonElement;
+      try { await navigator.clipboard.writeText(out.value); b.textContent = 'copied ✓'; } catch { out.select(); b.textContent = 'press ⌘C'; }
+      setTimeout(() => (b.textContent = 'copy output'), 1600);
+    });
+    inp.addEventListener('input', run);
+    run();
+  }
+</script>

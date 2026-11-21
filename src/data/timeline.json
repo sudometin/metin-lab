@@ -1,0 +1,6 @@
+[
+  { "year": "2026", "title": "MH://lab goes live", "body": "A research notebook built in public: reading notes, live instruments, games and a shell.", "kind": "lab" },
+  { "year": "[YEAR]", "title": "Decoding odors from LFP", "body": "Deep learning on olfactory bulb field potentials: can a CNN tell what the animal smelled?", "kind": "research" },
+  { "year": "[YEAR]", "title": "Patent application filed", "body": "Bidirectional olfactory neural interface eyewear system.", "kind": "patent" },
+  { "year": "[YEAR]", "title": "[MILESTONE]", "body": "[e.g. first paper, degree, talk, award]", "kind": "research" }
+]

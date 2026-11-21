@@ -1,0 +1,128 @@
+---
+// Live signal instrument: synthetic OB LFP, respiration and a mitral-cell raster
+---
+<figure class="sig" aria-label="Synthetic olfactory bulb recording">
+  <div class="sig__bar mono">
+    <span><span class="mint">CH03</span> · OB LFP · 1 kHz <span class="faint">(synthetic)</span></span>
+    <span class="sig__scale faint">200 ms/div · 50 µV/div</span>
+    <button id="live-btn" class="live-btn mono" aria-label="Pause the signal animation">
+      <span id="live-dot" class="live-dot"></span><span id="live-label">live</span>
+    </button>
+  </div>
+  <div class="sig__rows">
+    <div class="sig__ch mono"><b>LFP</b><span>ch03</span></div>
+    <svg viewBox="0 0 1200 160" preserveAspectRatio="none" class="sig__lfp" role="img" aria-label="Animated synthetic local field potential trace">
+      <path d="M0 80H1200" stroke="#1A2026" fill="none"></path>
+      <path id="lfp" stroke="#6EE7C8" stroke-width="2" fill="none" vector-effect="non-scaling-stroke"></path>
+    </svg>
+    <div class="sig__ch mono"><b>RESP</b><span>thermo</span></div>
+    <svg viewBox="0 0 1200 60" preserveAspectRatio="none" class="sig__resp" aria-hidden="true">
+      <path id="resp" stroke="#F5B454" stroke-width="1.6" fill="none" vector-effect="non-scaling-stroke"></path>
+    </svg>
+    <div class="sig__ch mono"><b>UNITS</b><span>10 × MC</span></div>
+    <svg id="raster" viewBox="0 0 1200 130" preserveAspectRatio="none" class="sig__raster" aria-hidden="true"></svg>
+  </div>
+</figure>
+
+<style>
+  .sig { margin: 0; }
+  .sig__bar { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px 16px; padding: 12px var(--pad); border-bottom: 1px solid var(--line); font-size: 12px; color: var(--muted); }
+  .sig__scale { flex: 1; text-align: right; }
+  .live-btn { display: inline-flex; align-items: center; gap: 6px; min-height: 32px; padding: 0 10px; border: 1px solid var(--line-3); background: transparent; color: var(--text); font-size: 12px; }
+  .live-dot { width: 7px; height: 7px; background: var(--mint); }
+  .sig__rows { display: grid; grid-template-columns: 92px 1fr; background:
+      linear-gradient(90deg, rgba(var(--mint-rgb), .05) 1px, transparent 1px) 92px 0 / calc((100% - 92px) / 12) 100%; }
+  .sig__ch { display: flex; flex-direction: column; justify-content: center; gap: 2px; padding: 0 0 0 var(--pad); border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); font-size: 10px; letter-spacing: .12em; color: var(--muted); }
+  .sig__ch b { color: var(--text); font-weight: 500; font-size: 11px; }
+  .sig svg { display: block; width: 100%; border-bottom: 1px solid var(--line); }
+  .sig__lfp { height: 150px; }
+  .sig__resp { height: 50px; }
+  .sig__raster { height: 110px; }
+  .mint { color: var(--mint); } .faint { color: var(--faint); }
+  @media (max-width: 640px) { .sig__rows { grid-template-columns: 64px 1fr; background-position: 64px 0; } .sig__scale { display: none; } }
+</style>
+
+<script>
+  const w = window as any;
+  w.metinLab = w.metinLab || { spikes: 0 };
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // ---- synthetic LFP + respiration ----
+  const lfpEl = document.getElementById('lfp');
+  const respEl = document.getElementById('resp');
+  const btn = document.getElementById('live-btn') as HTMLButtonElement;
+  const dot = document.getElementById('live-dot') as HTMLElement;
+  const label = document.getElementById('live-label') as HTMLElement;
+  let phase = 0;
+  let live = !reduce;
+
+  function lfpPath(p: number) {
+    let d = '';
+    for (let i = 0; i <= 300; i++) {
+      const t = (i + p) * 0.05;
+      const env = Math.max(0, Math.sin(t * 0.55));
+      const gamma = Math.sin(t * 9.3) * env * env * 16;
+      const theta = Math.sin(t * 1.1) * 18 + Math.sin(t * 0.37 + 1) * 8;
+      const noise = Math.sin(t * 23.7) * 2.5 + Math.sin(t * 41.3 + 2) * 1.6;
+      const y = 80 - (theta + gamma + noise) * 1.25;
+      d += `${i ? 'L' : 'M'}${i * 4} ${y.toFixed(1)} `;
+    }
+    return d;
+  }
+  function respPath(p: number) {
+    let d = '';
+    for (let i = 0; i <= 150; i++) {
+      const t = (i * 2 + p) * 0.05;
+      d += `${i ? 'L' : 'M'}${i * 8} ${(30 - Math.sin(t * 0.55) * 20).toFixed(1)} `;
+    }
+    return d;
+  }
+  function draw() {
+    lfpEl?.setAttribute('d', lfpPath(phase));
+    respEl?.setAttribute('d', respPath(phase));
+  }
+  function setLive(on: boolean) {
+    live = on;
+    label.textContent = on ? 'live' : 'paused';
+    dot.style.background = on ? '#6EE7C8' : '#5B6672';
+    btn.setAttribute('aria-label', on ? 'Pause the signal animation' : 'Resume the signal animation');
+  }
+  btn?.addEventListener('click', () => setLive(!live));
+  setLive(live);
+  draw();
+  let last = 0;
+  function frame(ts: number) {
+    if (live && ts - last > 50) {
+      last = ts;
+      phase++;
+      w.metinLab.spikes += 3;
+      draw();
+    }
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+
+  // ---- static raster, locked to the sniff cycle ----
+  const raster = document.getElementById('raster');
+  if (raster) {
+    let seed = 7;
+    const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+    for (let r = 0; r < 10; r++) {
+      const y0 = 6 + r * 12;
+      const pref = rnd() * 3.14;
+      let d = '';
+      for (let x = 0; x < 1200; x += 6) {
+        const drive = Math.max(0, Math.sin(x * 0.0115 + pref));
+        if (rnd() < 0.02 + drive * drive * 0.22) d += `M${x} ${y0}V${y0 + 8} `;
+      }
+      const p = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      p.setAttribute('d', d);
+      p.setAttribute('stroke', r % 3 === 0 ? '#F5B454' : '#6EE7C8');
+      p.setAttribute('stroke-width', '2');
+      p.setAttribute('fill', 'none');
+      p.setAttribute('vector-effect', 'non-scaling-stroke');
+      raster.appendChild(p);
+    }
+  }
+
+</script>

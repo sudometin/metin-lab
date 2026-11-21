@@ -1,0 +1,110 @@
+---
+import { getCollection } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import CipherLab from '../../components/CipherLab.astro';
+import projects from '../../data/ops-projects.json';
+
+const posts = (await getCollection('ops', ({ data }) => !data.draft)).sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
+const kindIcon: Record<string, string> = { bot: '⌁', security: '⛨', ctf: '⚑', tool: '⚙', log: '›' };
+const statusColor: Record<string, string> = { live: 'var(--mint)', building: '#F5B454', planned: 'var(--faint)' };
+---
+<Base room="ops" title="Ops · side quests of Matin Hassanloo" description="Telegram bots, security experiments, CTF writeups and small sharp tools: the side quests of Matin Hassanloo.">
+  <div class="frame">
+    <section class="ohero">
+      <div class="ohero__id">
+        <p class="kicker mono">// restricted area · authorized curiosity only</p>
+        <h1 class="serif">Side <em>quests</em><span class="dot">.</span></h1>
+        <p class="lede">Neuroscience is the day job. This room is for what I build at night: <strong>Telegram bots</strong>, <strong>security experiments</strong>, <strong>CTF writeups</strong> and small sharp tools that do exactly one thing.</p>
+      </div>
+      <pre class="ohero__term mono" aria-label="Terminal flavour text"><span class="p">root@ops:~#</span> id
+uid=0(matin) gid=0(night) groups=bots,sec,ctf,coffee
+<span class="p">root@ops:~#</span> uname -a
+OPS 6.6.0-sidequest #1 SMP PREEMPT_DYNAMIC x86_64 GNU/Linux
+<span class="p">root@ops:~#</span> cat /etc/motd
+  only systems i own or am allowed to test.
+  writeups after the fact. boring details included.
+<span class="p">root@ops:~#</span> <span class="cur"></span></pre>
+    </section>
+
+    <section class="sec">
+      <div class="sec__head"><h2 class="sec__title">Projects</h2><span class="sec__meta">01 · bots · security · tools</span></div>
+      <div class="cells">
+        {projects.map((p) => (
+          <article class="cell proj">
+            <div class="cell__label"><span>{kindIcon[p.kind] ?? '·'} {p.kind}</span><span style={`color:${statusColor[p.status] ?? 'var(--muted)'}`}>● {p.status}</span></div>
+            <h3 class="serif">{p.href ? <a class="stretch" href={p.href}>{p.name}</a> : p.name}</h3>
+            <p>{p.desc}</p>
+            <div class="stack mono">{p.stack.map((s) => <span>{s}</span>)}</div>
+          </article>
+        ))}
+      </div>
+    </section>
+
+    <section class="sec">
+      <div class="sec__head"><h2 class="sec__title">Writeups</h2><span class="sec__meta">02 · {posts.length} file{posts.length === 1 ? '' : 's'}</span></div>
+      <ol class="rows">
+        {posts.map((p) => (
+          <li class="row">
+            <div class="row__meta mono"><span class="k">{kindIcon[p.data.kind]} {p.data.kind}</span><span>{p.data.date.toISOString().slice(0, 10)}</span>{p.data.stack.map((s) => <span>#{s}</span>)}</div>
+            <h3><a class="note__link" href={`/ops/${p.id}/`}>{p.data.title}</a></h3>
+            <p>{p.data.summary}</p>
+          </li>
+        ))}
+      </ol>
+    </section>
+
+    <section class="sec" id="cipher-lab-sec">
+      <div class="sec__head"><h2 class="sec__title">Cipher <em>lab</em></h2><span class="sec__meta">03 · encode · decode · hash · local only</span></div>
+      <CipherLab />
+    </section>
+
+    <section class="sec">
+      <div class="sec__head"><h2 class="sec__title">Rules of <em>engagement</em></h2><span class="sec__meta">04 · read before you ask</span></div>
+      <ol class="roe mono">
+        <li><b>01</b> I only test systems I own or have written permission to test.</li>
+        <li><b>02</b> Found something in your product? Tell me. I'll report it privately first.</li>
+        <li><b>03</b> Writeups are published after fixes, never with live exploits for unpatched targets.</li>
+        <li><b>04</b> Bots respect rate limits, ToS and the people on the other side of the chat.</li>
+      </ol>
+    </section>
+  </div>
+</Base>
+
+<style>
+  .ohero { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 520px), 1fr)); border-bottom: 1px solid var(--line);
+    background: repeating-linear-gradient(135deg, transparent 0 18px, rgba(var(--mint-rgb), .025) 18px 19px); }
+  .ohero__id { padding: clamp(36px, 6vw, 72px) var(--pad); display: flex; flex-direction: column; gap: 18px; border-right: 1px solid var(--line); }
+  .kicker { margin: 0; font-size: 12px; color: var(--mint); letter-spacing: .1em; }
+  h1 { margin: 0; font-weight: 400; font-size: clamp(64px, 9vw, 124px); line-height: .9; letter-spacing: -0.02em; }
+  h1 em { color: var(--mint); }
+  .dot { color: var(--mint); }
+  .lede { margin: 0; font-size: 17px; color: var(--text-2); max-width: 52ch; }
+  .lede strong { color: var(--text); font-weight: 500; }
+  .ohero__term { margin: 0; padding: clamp(28px, 5vw, 56px) var(--pad); background: #060406; color: var(--text-2); font-size: 13px; line-height: 1.75; white-space: pre-wrap; overflow-x: auto; }
+  .ohero__term .p { color: var(--mint); }
+  .cur { display: inline-block; width: 8px; height: 15px; vertical-align: -3px; background: var(--mint); animation: blink 1s steps(1) infinite; }
+  .proj { position: relative; display: flex; flex-direction: column; gap: 8px; }
+  .proj h3 { margin: 0; font-weight: 400; font-size: 28px; line-height: 1.1; word-break: break-word; }
+  .proj p { margin: 0; color: var(--text-2); font-size: 15px; }
+  .proj:hover { background: var(--surface); }
+  .stretch { color: var(--text); }
+  .stretch::after { content: ''; position: absolute; inset: 0; }
+  .proj:hover .stretch { color: var(--mint); }
+  .stack { display: flex; flex-wrap: wrap; gap: 6px; margin-top: auto; padding-top: 8px; font-size: 11px; }
+  .stack span { padding: 2px 8px; border: 1px solid var(--line-3); color: var(--muted); }
+  .rows { list-style: none; margin: 0; padding: 0; }
+  .row { position: relative; padding: 22px var(--pad); border-bottom: 1px solid var(--line); }
+  .row:last-child { border-bottom: none; }
+  .row:hover { background: var(--surface); }
+  .row__meta { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 11px; color: var(--muted); letter-spacing: .06em; }
+  .row__meta .k { color: var(--mint); text-transform: uppercase; }
+  .row h3 { margin: 10px 0 6px; font-family: var(--font-serif); font-weight: 400; font-size: 30px; line-height: 1.1; }
+  .note__link { color: var(--text); }
+  .note__link::after { content: ''; position: absolute; inset: 0; }
+  .row:hover .note__link { color: var(--mint); }
+  .row p { margin: 0; color: var(--text-2); font-size: 15px; }
+  .roe { list-style: none; margin: 0; padding: 0; }
+  .roe li { display: flex; gap: 20px; padding: 18px var(--pad); border-bottom: 1px solid var(--line); font-size: 14px; color: var(--text-2); }
+  .roe li:last-child { border-bottom: none; }
+  .roe b { color: var(--mint); font-weight: 400; }
+</style>

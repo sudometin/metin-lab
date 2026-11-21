@@ -33,8 +33,24 @@ const publications = defineCollection({
     venue: z.string(),
     kind: z.enum(['paper', 'preprint', 'patent', 'talk', 'thesis']),
     url: z.string().optional(),
+    badges: z.array(z.string()).default([]), // e.g. "Q1", "under review", "pending"
+    bibtex: z.string().optional(),
     order: z.number().default(0),
   }),
 });
 
-export const collections = { notes, publications };
+// Ops room: writeups for side projects (Telegram bots, security, CTFs, tools)
+const ops = defineCollection({
+  loader: glob({ pattern: '**/*.md', base: './src/content/ops' }),
+  schema: z.object({
+    title: z.string(),
+    kind: z.enum(['bot', 'security', 'ctf', 'tool', 'log']),
+    summary: z.string(),
+    date: z.coerce.date(),
+    stack: z.array(z.string()).default([]),
+    repo: z.string().optional(),
+    draft: z.boolean().default(false),
+  }),
+});
+
+export const collections = { notes, publications, ops };

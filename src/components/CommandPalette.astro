@@ -8,7 +8,10 @@ const items = [
   { group: 'go', label: 'Reading notes', hint: 'g n', href: '/notes/' },
   { group: 'go', label: 'Knowledge graph', hint: 'g g', href: '/graph/' },
   { group: 'go', label: 'Now · lab log', hint: 'g w', href: '/now/' },
-  { group: 'go', label: 'Tools · LIF neuron', hint: 'g t', href: '/#tools' },
+  { group: 'go', label: 'Tools · LIF neuron', hint: 'g t', href: '/#instruments' },
+  { group: 'go', label: 'Ops · bots & security', hint: 'g o', href: '/ops/' },
+  { group: 'go', label: 'Ops · cipher lab', hint: '', href: '/ops/#cipher-lab-sec' },
+  { group: 'go', label: 'Live activity', hint: '', href: '/#main' },
   { group: 'go', label: 'Play · games', hint: 'g p', href: '/#play' },
   { group: 'go', label: 'Terminal', hint: 'g s', href: '/#terminal' },
   { group: 'go', label: 'Publications', hint: '', href: '/#publications' },
@@ -22,7 +25,7 @@ const items = [
 const shortcuts = [
   ['⌘K / Ctrl K', 'command palette'],
   ['?', 'this help'],
-  ['g h · g n · g g · g w', 'home · notes · graph · now'],
+  ['g h · g n · g g · g w · g o', 'home · notes · graph · now · ops'],
   ['g t · g p · g s', 'tools · play · shell'],
   ['j / k', 'next / previous note card'],
   ['r', 'random note'],
@@ -44,7 +47,7 @@ const shortcuts = [
 
 <dialog class="cp cp--help" id="keys" aria-label="Keyboard shortcuts">
   <div class="cp__box">
-    <div class="cp__head mono"><span class="mint">$ man metin.lab</span><kbd>esc</kbd></div>
+    <div class="cp__head mono"><span class="mint">$ man MH://lab</span><kbd>esc</kbd></div>
     <dl class="keys mono">
       {shortcuts.map(([k, v]) => <div><dt>{k}</dt><dd>{v}</dd></div>)}
     </dl>
@@ -61,12 +64,12 @@ const shortcuts = [
 <style>
   .cp { padding: 0; border: none; background: transparent; width: min(640px, calc(100vw - 32px)); max-height: 70vh; margin-top: 12vh; }
   .cp::backdrop { background: rgba(4,6,8,.72); backdrop-filter: blur(4px); }
-  .cp__box { border: 1px solid var(--line-3); border-radius: 16px; background: #0D1115; box-shadow: 0 30px 80px rgba(0,0,0,.6); overflow: hidden; color: var(--text); }
+  .cp__box { border: 1px solid var(--line-3); border-radius: 0; background: #0D1115; box-shadow: 0 30px 80px rgba(0,0,0,.6); overflow: hidden; color: var(--text); }
   .cp__input { display: flex; align-items: center; gap: 12px; padding: 14px 18px; border-bottom: 1px solid var(--line); }
   .cp__input input { flex: 1; min-width: 0; min-height: 32px; background: transparent; border: none; outline: none; color: var(--text); font: inherit; font-size: 15px; }
   .cp kbd { font-family: var(--font-mono); font-size: 11px; padding: 2px 7px; border: 1px solid var(--line-3); border-radius: 6px; color: var(--muted); }
   .cp__list { list-style: none; margin: 0; padding: 8px; max-height: 52vh; overflow-y: auto; }
-  .cp__list :global(li) { display: flex; justify-content: space-between; align-items: center; gap: 16px; min-height: 44px; padding: 0 12px; border-radius: 10px; cursor: pointer; }
+  .cp__list :global(li) { display: flex; justify-content: space-between; align-items: center; gap: 16px; min-height: 44px; padding: 0 12px; border-radius: 0; cursor: pointer; }
   .cp__list :global(li[aria-selected='true']) { background: #16201E; outline: 1px solid #1F3B35; }
   .cp__list :global(.grp) { font-family: var(--font-mono); font-size: 11px; color: var(--faint); width: 36px; flex: 0 0 36px; }
   .cp__list :global(.lbl) { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -84,7 +87,7 @@ const shortcuts = [
   @keyframes ap { from { transform: translateX(-100vw); } to { transform: translateX(60vw); } }
   .ap.flash::before { content: ''; position: absolute; inset: 0; background: rgba(110,231,200,.08); animation: fade 1.4s forwards; }
   @keyframes fade { 40% { opacity: 1; } to { opacity: 0; } }
-  .toast { position: fixed; left: 50%; bottom: 56px; transform: translateX(-50%); z-index: 101; padding: 12px 18px; border-radius: 12px; border: 1px solid #1F3B35; background: #0E1C19; color: var(--mint); font-size: 13px; box-shadow: 0 10px 40px rgba(0,0,0,.5); max-width: calc(100vw - 32px); }
+  .toast { position: fixed; left: 50%; bottom: 56px; transform: translateX(-50%); z-index: 101; padding: 12px 18px; border-radius: 0; border: 1px solid #1F3B35; background: #0E1C19; color: var(--mint); font-size: 13px; box-shadow: 0 10px 40px rgba(0,0,0,.5); max-width: calc(100vw - 32px); }
 </style>
 
 <script>
@@ -186,7 +189,7 @@ const shortcuts = [
   [dlg, help].forEach((d) => d.addEventListener('click', (e) => { if (e.target === d) d.close(); }));
 
   // global keys
-  const GO: Record<string, string> = { h: '/', n: '/notes/', g: '/graph/', w: '/now/', t: '/#tools', p: '/#play', s: '/#terminal' };
+  const GO: Record<string, string> = { h: '/', n: '/notes/', g: '/graph/', w: '/now/', t: '/#instruments', p: '/#play', s: '/#terminal', o: '/ops/' };
   const KONAMI = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'];
   let kpos = 0;
   let gPending = 0;

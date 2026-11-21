@@ -55,14 +55,14 @@ const stats = [
         <div class="heat__col">
           <span class="heat__month mono" aria-hidden="true">{col.month}</span>
           {col.days.map((d) => (
-            <span class={`cell l${d.level}${d.future ? ' future' : ''}`} title={`${d.k} · ${d.c} note${d.c === 1 ? '' : 's'}`}></span>
+            <span class={`hm l${d.level}${d.future ? ' future' : ''}`} title={`${d.k} · ${d.c} note${d.c === 1 ? '' : 's'}`}></span>
           ))}
         </div>
       ))}
     </div>
   </div>
   <div class="heat__legend mono" aria-hidden="true">
-    <span>less</span><span class="cell l0"></span><span class="cell l2"></span><span class="cell l3"></span><span class="cell l4"></span><span>more</span>
+    <span>less</span><span class="hm l0"></span><span class="hm l2"></span><span class="hm l3"></span><span class="hm l4"></span><span>more</span>
   </div>
 </div>
 
@@ -70,16 +70,16 @@ const stats = [
   .heat { display: flex; flex-direction: column; gap: 16px; padding: 20px 24px; border: 1px solid var(--line-2); border-radius: var(--radius); background: var(--surface); }
   .heat__stats { display: flex; flex-wrap: wrap; gap: 12px 32px; font-size: 12px; }
   .heat__stats div { display: flex; flex-direction: column; gap: 2px; }
-  .heat__stats b { font-family: var(--font-display); font-size: 22px; font-weight: 500; color: var(--text); }
+  .heat__stats b { font-family: var(--font-display); font-size: 22px; font-weight: 400; color: var(--text); }
   .heat__scroll { overflow-x: auto; padding-bottom: 4px; }
   .heat__grid { display: flex; gap: 4px; width: max-content; }
   .heat__col { display: grid; grid-template-rows: 16px repeat(7, 12px); gap: 4px; }
   .heat__month { font-size: 10px; color: var(--muted); white-space: nowrap; width: 12px; overflow: visible; }
-  .cell { display: block; width: 12px; height: 12px; border-radius: 3px; background: #151B21; }
-  .cell.l2 { background: #2B7A66; }
-  .cell.l3 { background: #4BC4A4; }
-  .cell.l4 { background: var(--mint); box-shadow: 0 0 8px rgba(110,231,200,.5); }
-  .cell.future { background: transparent; border: 1px dashed #1C232B; }
+  .hm { display: block; width: 12px; height: 12px; border-radius: 0; background: #151B21; }
+  .hm.l2 { background: #2B7A66; }
+  .hm.l3 { background: #4BC4A4; }
+  .hm.l4 { background: var(--mint); box-shadow: 0 0 8px rgba(110,231,200,.5); }
+  .hm.future { background: transparent; border: 1px dashed #1C232B; }
   .heat__legend { display: flex; align-items: center; justify-content: flex-end; gap: 4px; font-size: 11px; color: var(--muted); }
   .heat__legend span:first-child { margin-right: 4px; } .heat__legend span:last-child { margin-left: 4px; }
 </style>
