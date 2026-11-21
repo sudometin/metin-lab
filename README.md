@@ -13,6 +13,10 @@ Built with [Astro](https://astro.build): static HTML, no framework runtime, and 
 - **Timeline:** `src/data/timeline.json` (fill in the `[YEAR]`s).
 - **Publication badges & BibTeX:** in `src/data/publications.json`, add `"badges": ["Q1", "Top 10%"]` and `"bibtex": "@article{…}"` to get a copy button.
 
+## feed.json (for imatin.dev)
+
+`src/pages/feed.json.js` publishes `/feed.json` (latest notes, ops posts, lab log and note dates). `public/_headers` opens CORS on it so imatin.dev can read it. Don't delete either file, or the homepage's live previews fall back to static text.
+
 ## /ops: side quests (bots, security, CTFs)
 
 - Red-accented room at `/ops`, with the same site and the same repo. Set by `<Base room="ops">`.
