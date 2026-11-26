@@ -25,14 +25,14 @@
   },
   {
     "year": "2026",
-    "title": "Odor decoding from neural recordings",
-    "body": "Deep learning on piriform cortex population activity: can a network tell what the animal smelled?",
+    "title": "Olfactory coding research",
+    "body": "Working on how odors are represented in neural activity. Details once it is out.",
     "kind": "research"
   },
   {
     "year": "—",
-    "title": "Patent application: olfactory neural interface",
-    "body": "Bidirectional olfactory neural interface eyewear system.",
+    "title": "Patent application filed",
+    "body": "A wearable olfactory interface.",
     "kind": "patent"
   }
 ]

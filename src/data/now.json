@@ -13,8 +13,8 @@
     {
       "title": "researching",
       "items": [
-        "odor decoding from piriform cortex recordings (pcx-1), aiming for a paper",
-        "a PRISMA systematic review on ML odor decoding across species"
+        "a paper on olfactory coding (details when it is out)",
+        "a review article in computational olfaction"
       ]
     },
     {
@@ -28,7 +28,7 @@
       "title": "thinking about",
       "items": [
         "how much of the olfactory code survives in field potentials",
-        "what a recurrence-silenced cortex still knows about odors"
+        "what makes a good benchmark for odor decoding"
       ]
     }
   ]

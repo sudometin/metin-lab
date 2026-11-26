@@ -1,7 +1,7 @@
 [
   {
-    "id": "olfactory-interface-patent",
-    "title": "Bidirectional olfactory neural interface eyewear system",
+    "id": "patent-1",
+    "title": "Wearable olfactory interface",
     "venue": "Patent application",
     "kind": "patent",
     "badges": [
@@ -10,9 +10,9 @@
     "order": 1
   },
   {
-    "id": "odor-decoding-pcx",
-    "title": "Decoding odors from piriform cortex population activity with deep learning",
-    "venue": "Manuscript in preparation",
+    "id": "paper-1",
+    "title": "Neural coding of odors in the olfactory system",
+    "venue": "Research article · in preparation",
     "kind": "paper",
     "badges": [
       "in prep"
@@ -20,13 +20,12 @@
     "order": 2
   },
   {
-    "id": "ai-olfaction-review",
-    "title": "Machine learning for odor decoding from neural signals across species: a systematic review",
-    "venue": "PRISMA systematic review",
+    "id": "review-1",
+    "title": "Computational methods in olfaction",
+    "venue": "Review article · in preparation",
     "kind": "paper",
     "badges": [
-      "in prep",
-      "PRISMA"
+      "in prep"
     ],
     "order": 3
   }
