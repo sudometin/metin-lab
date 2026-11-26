@@ -38,6 +38,11 @@ const chips = ['help', 'whoami', 'ls notes', 'git log', 'ops', '▸ fire'];
   .term__dots span.on { background: var(--mint); box-shadow: 0 0 8px var(--mint); }
   .term__out { flex: 1; padding: 16px 18px 8px; min-height: var(--term-h); max-height: var(--term-h); overflow-y: auto; display: flex; flex-direction: column; }
   .term__out > :global(*) { flex-shrink: 0; }
+  /* phones: let the shell grow with its output so the banner never scrolls out of view */
+  @media (max-width: 640px) {
+    .term__out { min-height: 0; max-height: none; overflow-y: visible; }
+    .term__out :global(.banner) { font-size: 11px; }
+  }
   .term__out :global(.banner) { color: var(--mint); font-weight: 500; line-height: 1.15; text-shadow: 0 0 12px rgba(var(--mint-rgb), .45); white-space: pre; overflow: hidden; }
   .term__out :global(.cmd b) { color: var(--mint); font-weight: 400; }
   .term__out :global(div) { white-space: pre-wrap; word-break: break-word; line-height: 1.55; color: var(--text-2); }
