@@ -28,7 +28,7 @@ const publications = defineCollection({
   loader: file('src/data/publications.json'),
   schema: z.object({
     id: z.string(),
-    year: z.string(),
+    year: z.string().optional(),
     title: z.string(),
     venue: z.string(),
     kind: z.enum(['paper', 'preprint', 'patent', 'talk', 'thesis']),

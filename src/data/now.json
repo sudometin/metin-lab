@@ -1,34 +1,34 @@
 {
-  "updated": "2026-11-20",
+  "updated": "2026-11-26",
   "location": "Istanbul",
   "sections": [
     {
       "title": "building",
       "items": [
-        "this website: notes, tools, games, a shell",
-        "a CNN that decodes odors from olfactory bulb LFP",
-        "[SOMETHING ELSE YOU ARE BUILDING]"
+        "Axial: next release of the macOS MRI viewer + DICOM de-identifier",
+        "EFFERENT-008: Telegram ops manager, in open beta",
+        "this lab: notes, tools, games & a shell"
       ]
     },
     {
-      "title": "reading",
+      "title": "researching",
       "items": [
-        "[PAPER OR BOOK YOU ARE READING]",
-        "[ANOTHER ONE]"
+        "odor decoding from piriform cortex recordings (pcx-1), aiming for a paper",
+        "a PRISMA systematic review on ML odor decoding across species"
       ]
     },
     {
       "title": "side quests",
       "items": [
-        "[A TELEGRAM BOT YOU ARE BUILDING]",
-        "[A SECURITY TOPIC YOU ARE LEARNING]"
+        "NULLBYTE: stego, Shamir secret sharing and a honeypot in a Telegram bot",
+        "UNFINITUM: posting daily projects, code and papers"
       ]
     },
     {
       "title": "thinking about",
       "items": [
         "how much of the olfactory code survives in field potentials",
-        "[AN OPEN QUESTION ON YOUR MIND]"
+        "what a recurrence-silenced cortex still knows about odors"
       ]
     }
   ]

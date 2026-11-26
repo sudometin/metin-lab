@@ -9,6 +9,7 @@ const items = [
   { group: 'go', label: 'Knowledge graph', hint: 'g g', href: '/graph/' },
   { group: 'go', label: 'Now · lab log', hint: 'g w', href: '/now/' },
   { group: 'go', label: 'Tools · LIF neuron', hint: 'g t', href: '/#instruments' },
+  { group: 'go', label: 'Builds · Axial, EFFERENT, NULLBYTE…', hint: 'g b', href: '/#builds' },
   { group: 'go', label: 'Ops · bots & security', hint: 'g o', href: '/ops/' },
   { group: 'go', label: 'Ops · cipher lab', hint: '', href: '/ops/#cipher-lab-sec' },
   { group: 'go', label: 'Live activity', hint: '', href: '/#main' },
@@ -25,7 +26,7 @@ const items = [
 const shortcuts = [
   ['⌘K / Ctrl K', 'command palette'],
   ['?', 'this help'],
-  ['g h · g n · g g · g w · g o', 'home · notes · graph · now · ops'],
+  ['g h · g n · g g · g w · g o · g b', 'home · notes · graph · now · ops · builds'],
   ['g t · g p · g s', 'tools · play · shell'],
   ['j / k', 'next / previous note card'],
   ['r', 'random note'],
@@ -189,7 +190,7 @@ const shortcuts = [
   [dlg, help].forEach((d) => d.addEventListener('click', (e) => { if (e.target === d) d.close(); }));
 
   // global keys
-  const GO: Record<string, string> = { h: '/', n: '/notes/', g: '/graph/', w: '/now/', t: '/#instruments', p: '/#play', s: '/#terminal', o: '/ops/' };
+  const GO: Record<string, string> = { h: '/', n: '/notes/', g: '/graph/', w: '/now/', t: '/#instruments', p: '/#play', s: '/#terminal', o: '/ops/', b: '/#builds' };
   const KONAMI = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'];
   let kpos = 0;
   let gPending = 0;

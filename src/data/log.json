@@ -1,5 +1,25 @@
 [
   {
+    "date": "2026-11-26",
+    "type": "feat",
+    "msg": "v0.5: builds section, github → sudometin, real now page"
+  },
+  {
+    "date": "2026-11-24",
+    "type": "ship",
+    "msg": "EFFERENT-008 open beta · @TheEfferentBot"
+  },
+  {
+    "date": "2026-11-23",
+    "type": "ship",
+    "msg": "Axial v0.2.0 · macOS MRI viewer + DICOM de-id"
+  },
+  {
+    "date": "2026-11-22",
+    "type": "ship",
+    "msg": "UNFINITUM channel live · daily projects, code, papers"
+  },
+  {
     "date": "2026-11-21",
     "type": "feat",
     "msg": "v0.4: lab redesign, live activity, /ops room"

@@ -10,13 +10,15 @@ import SpikeSorter from '../components/SpikeSorter.astro';
 import { getNotes, tagSlug, commitHash } from '../lib/notes';
 import rawLog from '../data/log.json';
 import timeline from '../data/timeline.json';
+import profile from '../data/profile.json';
+import builds from '../data/builds.json';
 
 const notes = (await getNotes()).slice(0, 6);
 const pubs = (await getCollection('publications')).sort((a, b) => a.data.order - b.data.order);
 const ops = (await getCollection('ops', ({ data }) => !data.draft)).sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf()).slice(0, 3);
 const log = rawLog.slice(0, 7).map((c) => ({ ...c, hash: commitHash(c.date + c.msg) }));
 const kindColor: Record<string, string> = { patent: '#F5B454', paper: 'var(--mint)', preprint: '#9FB8FF', talk: '#F59EC0', thesis: '#A7B1BC' };
-const logColor: Record<string, string> = { feat: 'var(--mint)', read: '#9FB8FF', exp: '#F5B454', data: '#F59EC0', init: '#F5B454', fix: '#F59EC0' };
+const logColor: Record<string, string> = { ship: '#F5B454', feat: 'var(--mint)', read: '#9FB8FF', exp: '#F5B454', data: '#F59EC0', init: '#F5B454', fix: '#F59EC0' };
 
 const tools = [
   { status: 'live', title: 'Knowledge graph', body: 'Every note a neuron, every shared concept a synapse. Spikes travel through a connectome of my reading.', href: '/graph/' },
@@ -24,12 +26,29 @@ const tools = [
   { status: 'planned', title: 'Spectrogram explorer', body: 'Drop a CSV of EEG/LFP, pick a window and band, watch theta, beta and gamma light up. Nothing leaves your browser.' },
   { status: 'planned', title: 'Neural-data snippets', body: 'Copy-pasteable Python: bandpass, Hilbert phase, spike detection, epoching. The stuff I keep rewriting.' },
 ];
+const gh = `https://github.com/${profile.github}`;
+const tg = profile.telegram?.channel ? `https://t.me/${profile.telegram.channel}` : null;
+// hero + contact links: anything left null in src/data/profile.json is hidden
 const links = [
-  { label: 'github', href: 'https://github.com/maasker' },
-  { label: 'scholar', href: '#contact' },
-  { label: 'cv', href: 'https://cv.imatin.dev' },
+  { label: 'github', href: gh },
+  profile.scholar && { label: 'scholar', href: profile.scholar },
+  profile.cv && { label: 'cv', href: profile.cv },
+  tg && { label: 'telegram', href: tg },
   { label: 'imatin.dev', href: 'https://imatin.dev' },
-];
+].filter(Boolean) as { label: string; href: string }[];
+const contacts = [
+  profile.email && ['email', profile.email, `mailto:${profile.email}`],
+  profile.scholar && ['scholar', 'google scholar', profile.scholar],
+  ['github', profile.github, gh],
+  profile.orcid && ['orcid', profile.orcid.replace(/^https?:\/\/orcid\.org\//, ''), profile.orcid.startsWith('http') ? profile.orcid : `https://orcid.org/${profile.orcid}`],
+  tg && ['telegram', `@${profile.telegram.channel}`, tg],
+  profile.cv && ['cv', profile.cv.replace(/^https?:\/\//, ''), profile.cv],
+].filter(Boolean) as string[][];
+const buildList = builds.map((b) => ({
+  ...b,
+  links: b.name === 'UNFINITUM' && tg ? [{ label: 'join the channel', href: tg }, ...b.links] : b.links,
+}));
+const kindGlyph: Record<string, string> = { app: '◧', bot: '⌁', security: '⛨', channel: '⌘', tool: '⚙' };
 ---
 <Base>
   <div class="frame">
@@ -55,7 +74,7 @@ const links = [
     <!-- ============ 02 ACTIVITY ============ -->
     <section class="sec" aria-labelledby="s-act">
       <div class="sec__head"><h2 id="s-act" class="sec__title">Live <em>activity</em></h2><span class="sec__meta">02 · reading · topics · github</span></div>
-      <Activity />
+      <Activity github={profile.github} />
     </section>
 
     <!-- ============ 03 WRITING ============ -->
@@ -103,9 +122,26 @@ const links = [
       </div>
     </section>
 
-    <!-- ============ 05 PLAY ============ -->
+    <!-- ============ 05 BUILDS ============ -->
+    <section class="sec" id="builds" aria-labelledby="s-builds">
+      <div class="sec__head"><h2 id="s-builds" class="sec__title">Builds</h2><span class="sec__meta">05 · shipped &amp; shipping · <a href={gh}>github ↗</a></span></div>
+      <div class="cells builds">
+        {buildList.map((b) => (
+          <article class:list={['cell', 'build', { 'build--ops': b.room === 'ops' }]}>
+            <div class="cell__label"><span>{kindGlyph[b.kind] ?? '·'} {b.kind}</span><span class:list={{ live: b.status === 'live' || b.status === 'open beta' }}>{b.status}</span></div>
+            <h3 class="serif">{b.name}</h3>
+            <p class="build__tag mono">{b.tagline}</p>
+            <p>{b.desc}</p>
+            <div class="build__tags mono">{b.tags.map((t) => <span>#{t}</span>)}</div>
+            {b.links.length > 0 && <div class="build__links mono">{b.links.map((l) => <a href={l.href}>{l.label} ↗</a>)}</div>}
+          </article>
+        ))}
+      </div>
+    </section>
+
+    <!-- ============ 06 PLAY ============ -->
     <section class="sec" id="play" aria-labelledby="s-play">
-      <div class="sec__head"><h2 id="s-play" class="sec__title">Play <em>with</em> spikes</h2><span class="sec__meta">05 · two games</span></div>
+      <div class="sec__head"><h2 id="s-play" class="sec__title">Play <em>with</em> spikes</h2><span class="sec__meta">06 · two games</span></div>
       <div class="sec__body">
         <div class="tabs mono" role="tablist" aria-label="Games">
           <button type="button" role="tab" id="tab-odor" aria-controls="panel-odor" aria-selected="true" data-tab="odor">Odor Decoder</button>
@@ -124,7 +160,7 @@ const links = [
 
     <!-- ============ 06 OPS ============ -->
     <section class="sec ops" aria-labelledby="s-ops">
-      <div class="sec__head"><h2 id="s-ops" class="sec__title">Side <em>quests</em></h2><span class="sec__meta">06 · <a href="/ops/">enter /ops ↗</a></span></div>
+      <div class="sec__head"><h2 id="s-ops" class="sec__title">Side <em>quests</em></h2><span class="sec__meta">07 · <a href="/ops/">enter /ops ↗</a></span></div>
       <div class="cells">
         <a class="cell opscell" href="/ops/">
           <div class="cell__label"><span>root@ops:~#</span><span class="red">● restricted</span></div>
@@ -143,14 +179,14 @@ const links = [
 
     <!-- ============ 07 PUBLICATIONS ============ -->
     <section class="sec" id="publications" aria-labelledby="s-pubs">
-      <div class="sec__head"><h2 id="s-pubs" class="sec__title">Publications</h2><span class="sec__meta">07 · with a doi, or soon</span></div>
+      <div class="sec__head"><h2 id="s-pubs" class="sec__title">Publications</h2><span class="sec__meta">08 · with a doi, or soon</span></div>
       <ol class="pubs">
         {pubs.map((p, i) => (
           <li class="pub">
             <span class="pub__n mono">[{String(i + 1).padStart(2, '0')}]</span>
             <div class="pub__main">
               {p.data.url ? <a class="pub__title serif" href={p.data.url}>{p.data.title}</a> : <span class="pub__title serif">{p.data.title}</span>}
-              <span class="pub__venue">{p.data.venue} · {p.data.year}</span>
+              <span class="pub__venue">{p.data.venue}{p.data.year && ` · ${p.data.year}`}</span>
               <div class="pub__badges mono">
                 <span class="badge" style={`color:${kindColor[p.data.kind]};border-color:currentColor`}>{p.data.kind}</span>
                 {p.data.badges.map((b) => <span class="badge" style="color:var(--text-2);border-color:var(--line-3)">{b}</span>)}
@@ -164,7 +200,7 @@ const links = [
 
     <!-- ============ 08 TIMELINE ============ -->
     <section class="sec" aria-labelledby="s-time">
-      <div class="sec__head"><h2 id="s-time" class="sec__title">Timeline</h2><span class="sec__meta">08 · a running log</span></div>
+      <div class="sec__head"><h2 id="s-time" class="sec__title">Timeline</h2><span class="sec__meta">09 · a running log</span></div>
       <ol class="timeline">
         {timeline.map((t) => (
           <li>
@@ -178,14 +214,14 @@ const links = [
 
     <!-- ============ 09 CONTACT ============ -->
     <section class="sec" id="contact" aria-labelledby="s-contact">
-      <div class="sec__head"><h2 id="s-contact" class="sec__title">Open a <em>channel</em></h2><span class="sec__meta">09 · $ cat contact.txt</span></div>
+      <div class="sec__head"><h2 id="s-contact" class="sec__title">Open a <em>channel</em></h2><span class="sec__meta">10 · $ cat contact.txt</span></div>
       <div class="cells">
         <div class="cell about">
           <p class="serif quote">Engineer by training, neuroscientist by obsession, hacker by night.</p>
           <p>My research sits where engineering meets computational neuroscience: olfactory neural interfaces, neural signal processing, and deep learning on recordings from the brain. If something here sparks an idea (collaboration, data analysis, a bot, a bug), write to me.</p>
         </div>
         <div class="cell contact mono">
-          {[['email', '[YOUR EMAIL]', 'mailto:YOUR_EMAIL@example.com'], ['scholar', '[GOOGLE SCHOLAR]', '#contact'], ['github', 'maasker', 'https://github.com/maasker'], ['orcid', '[ORCID]', '#contact'], ['cv', 'cv.imatin.dev', 'https://cv.imatin.dev']].map(([k, v, h]) => (
+          {contacts.map(([k, v, h]) => (
             <a href={h}><span class="muted">{k}</span><span>{v}</span></a>
           ))}
         </div>
@@ -248,6 +284,18 @@ const links = [
   .stretch::after { content: ''; position: absolute; inset: 0; }
   .tool:hover { background: var(--surface); }
   .tool:hover .stretch { color: var(--mint); }
+
+  /* builds */
+  .build { position: relative; display: flex; flex-direction: column; gap: 8px; }
+  .build h3 { margin: 0; font-weight: 400; font-size: 34px; line-height: 1; }
+  .build__tag { margin: 0; font-size: 12px; color: var(--mint); }
+  .build--ops .build__tag { color: #FF4D6D; }
+  .build p:not(.build__tag) { margin: 0; color: var(--text-2); font-size: 15px; }
+  .build__tags { display: flex; flex-wrap: wrap; gap: 6px; font-size: 11px; color: var(--muted); margin-top: auto; padding-top: 6px; }
+  .build__links { display: flex; flex-wrap: wrap; gap: 4px 18px; font-size: 12px; }
+  .build__links a { padding: 6px 0; }
+  .build--ops .build__links a { color: #FF4D6D; }
+  .build:hover { background: var(--surface); }
 
   /* play */
   .tabs { display: flex; flex-wrap: wrap; gap: 0; margin-bottom: 18px; border: 1px solid var(--line-3); width: max-content; max-width: 100%; }

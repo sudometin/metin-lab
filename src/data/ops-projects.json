@@ -1,24 +1,36 @@
 [
   {
+    "name": "EFFERENT-008",
+    "kind": "bot",
+    "status": "live",
+    "desc": "A server and ops manager inside Telegram: Mini App terminal, encrypted server list, short-lived certs, runbooks, GPU and training-job watch. Open beta.",
+    "stack": [
+      "telegram",
+      "ssh",
+      "mini app"
+    ],
+    "href": "https://t.me/TheEfferentBot"
+  },
+  {
+    "name": "NULLBYTE",
+    "kind": "security",
+    "status": "building",
+    "desc": "A security toolkit bot: steganography lab, photo-metadata exposer, time capsules, Shamir secret sharing, SSH honeypot.",
+    "stack": [
+      "telegram",
+      "stego",
+      "crypto"
+    ]
+  },
+  {
     "name": "cipher-lab",
     "kind": "tool",
     "status": "live",
     "desc": "A tiny CyberChef: chain base64, hex, url, rot13, JWT decode and SHA hashes. Runs entirely in your browser. Scroll down.",
-    "stack": ["typescript", "web crypto"],
+    "stack": [
+      "typescript",
+      "web crypto"
+    ],
     "href": "#cipher-lab"
-  },
-  {
-    "name": "[YOUR FIRST TELEGRAM BOT]",
-    "kind": "bot",
-    "status": "planned",
-    "desc": "[What it does in one line, e.g. 'pings me when a training run finishes'.]",
-    "stack": ["[python]", "telegram bot api"]
-  },
-  {
-    "name": "[SECURITY PROJECT]",
-    "kind": "security",
-    "status": "planned",
-    "desc": "[A tool, a lab, or a CTF track you're working through.]",
-    "stack": ["[stack]"]
   }
 ]

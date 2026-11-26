@@ -1,6 +1,8 @@
 ---
 import { getNotes, bibtex, commitHash } from '../lib/notes';
 import rawLog from '../data/log.json';
+import profile from '../data/profile.json';
+import builds from '../data/builds.json';
 const log = rawLog.map((c) => ({ ...c, hash: commitHash(c.date + c.msg) }));
 
 // note slugs, titles and BibTeX, so the shell can `ls notes`, `open <slug>` and `bibtex <slug>`
@@ -24,7 +26,7 @@ const chips = ['help', 'whoami', 'ls notes', 'git log', 'ops', '▸ fire'];
     <span>try:</span>
     {chips.map((c) => <button type="button" data-run={c.replace('▸ ', '')}>{c}</button>)}
   </div>
-  <script type="application/json" data-notes set:html={JSON.stringify({ notes, log })} />
+  <script type="application/json" data-notes set:html={JSON.stringify({ notes, log, profile, builds: builds.map((b) => ({ name: b.name, kind: b.kind, status: b.status, tagline: b.tagline, href: b.links[0]?.href ?? null })) })} />
 </div>
 
 <style>
@@ -64,6 +66,8 @@ const chips = ['help', 'whoami', 'ls notes', 'git log', 'ops', '▸ fire'];
     const DATA = JSON.parse(root.querySelector('[data-notes]')?.textContent || '{"notes":[],"log":[]}');
     const notes: { id: string; title: string; bib: string }[] = DATA.notes;
     const log: { date: string; type: string; msg: string; hash: string }[] = DATA.log;
+    const profile: any = DATA.profile ?? {};
+    const builds: { name: string; kind: string; status: string; tagline: string; href: string | null }[] = DATA.builds ?? [];
     const w = window as any;
     const history: string[] = [];
     let hi = 0;
@@ -118,6 +122,7 @@ const chips = ['help', 'whoami', 'ls notes', 'git log', 'ops', '▸ fire'];
           '  sniff           random olfaction fact',
           '  spike           print one action potential',
           '  cat now.log     latest from the lab',
+          '  builds          things I ship: apps, bots, channels',
           '  ops             side quests: bots & security',
           '  contact         how to reach me',
           '  clear           wipe the screen',
@@ -190,7 +195,16 @@ const chips = ['help', 'whoami', 'ls notes', 'git log', 'ops', '▸ fire'];
       else if (low === 'fire' || low === 'ap') { line('depolarizing… threshold crossed. ⚡', 'acc'); w.metinLabFire?.(); }
       else if (low === 'sound') { const on = !soundOn(); setSound(on); if (on) click(0, 0.4); line(`sound: ${on ? 'on · spikes now click' : 'off'}  (also: press m anywhere)`, 'acc'); }
       else if (low === 'keys' || low === 'man') { (document.getElementById('keys') as HTMLDialogElement)?.showModal(); }
-      else if (low === 'contact') line('email: [YOUR EMAIL] · github: [GITHUB] · scholar: [GOOGLE SCHOLAR]');
+      else if (low === 'contact') {
+        if (profile.email) link('email   ', profile.email, `mailto:${profile.email}`, 'acc');
+        link('github  ', `github.com/${profile.github}`, `https://github.com/${profile.github}`, 'acc');
+        if (profile.scholar) link('scholar ', 'google scholar', profile.scholar, 'acc');
+        if (profile.telegram?.channel) link('channel ', `t.me/${profile.telegram.channel}`, `https://t.me/${profile.telegram.channel}`, 'acc');
+      }
+      else if (low === 'builds' || low === 'ls builds' || low === 'projects') {
+        builds.forEach((b) => (b.href ? link(`  ${b.name.padEnd(14)} ${b.status.padEnd(10)} `, b.tagline, b.href) : line(`  ${b.name.padEnd(14)} ${b.status.padEnd(10)} ${b.tagline}`)));
+        line('more: /#builds · /ops', 'dim');
+      }
       else if (low === 'cat coffee.log') line(`${new Date().toISOString().slice(0, 10)}  cups: too many  status: still running`, 'warm');
       else if (low === 'cat ideas.md' || low === 'cat todo_forever.txt') line('# 1. finish the paper  # 2. build the spectrogram tool  # 3. sleep (low priority)');
       else if (low.startsWith('sudo')) line('permission denied: you are not the olfactory bulb.', 'err');

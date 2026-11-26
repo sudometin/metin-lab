@@ -10,6 +10,7 @@ import '../styles/global.css';
 import Nav from '../components/Nav.astro';
 import StatusLine from '../components/StatusLine.astro';
 import CommandPalette from '../components/CommandPalette.astro';
+import profile from '../data/profile.json';
 
 interface Props {
   title?: string;
@@ -22,6 +23,11 @@ const {
   room = 'lab',
 } = Astro.props;
 const canonical = new URL(Astro.url.pathname, Astro.site);
+const person = {
+  '@context': 'https://schema.org', '@type': 'Person', name: profile.name, url: 'https://imatin.dev', jobTitle: 'Neuroengineer',
+  ...(profile.email ? { email: `mailto:${profile.email}` } : {}),
+  sameAs: ['https://imatin.dev', `https://github.com/${profile.github}`, profile.scholar, profile.orcid, profile.telegram?.channel && `https://t.me/${profile.telegram.channel}`].filter(Boolean),
+};
 const ticker = ['olfactory coding', 'LFP', 'EEG', 'spike sorting', 'neural decoding', 'CNNs', 'neural interfaces', 'signal processing', 'telegram bots', 'security', 'astro', 'cloudflare'];
 ---
 <!doctype html>
@@ -42,6 +48,7 @@ const ticker = ['olfactory coding', 'LFP', 'EEG', 'spike sorting', 'neural decod
     <meta property="og:description" content={description} />
     <meta property="og:url" content={canonical} />
     <meta name="twitter:card" content="summary" />
+    <script type="application/ld+json" set:html={JSON.stringify(person)} />
   </head>
   <body>
     <a class="skip" href="#main">Skip to content</a>

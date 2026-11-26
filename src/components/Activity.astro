@@ -5,7 +5,7 @@ import { getNotes } from '../lib/notes';
 import { TAGS } from '../content.config';
 
 interface Props { github?: string }
-const { github = 'maasker' } = Astro.props;
+const { github = 'sudometin' } = Astro.props;
 const notes = await getNotes();
 const counts = TAGS.map((t) => ({ t, n: notes.filter((x) => x.data.tag === t).length }));
 const total = notes.length || 1;

@@ -1,0 +1,48 @@
+[
+  {
+    "name": "Axial",
+    "kind": "app",
+    "status": "v0.2.0",
+    "tagline": "macOS MRI viewer + DICOM de-identifier",
+    "desc": "Browse MRI scans with a native macOS interface, then strip patient data from DICOM files before sharing them. Quick Look support and a de-identification report card included.",
+    "tags": ["macOS", "MRI", "DICOM", "privacy"],
+    "links": [
+      { "label": "repo", "href": "https://github.com/sudometin/Axial" },
+      { "label": "download .dmg", "href": "https://github.com/sudometin/Axial/releases" }
+    ],
+    "room": "lab"
+  },
+  {
+    "name": "EFFERENT-008",
+    "kind": "bot",
+    "status": "open beta",
+    "tagline": "server & ops manager that lives in Telegram",
+    "desc": "A Mini App terminal, an encrypted server list, short-lived SSH certificates, runbooks and health pings. It also watches training jobs and GPUs and opens Jupyter or TensorBoard tunnels. A subsystem of UNFINITUM.",
+    "tags": ["telegram", "ssh", "devops", "ml-ops"],
+    "links": [
+      { "label": "@TheEfferentBot", "href": "https://t.me/TheEfferentBot" },
+      { "label": "repo", "href": "https://github.com/sudometin/Efferent" }
+    ],
+    "room": "ops"
+  },
+  {
+    "name": "NULLBYTE",
+    "kind": "security",
+    "status": "building",
+    "tagline": "a security toolkit in a Telegram bot",
+    "desc": "Steganography lab (hide, reveal, detect), a photo-metadata exposer, time capsules, Shamir secret sharing and an SSH honeypot, all with terminal-style replies.",
+    "tags": ["telegram", "stego", "crypto", "honeypot"],
+    "links": [],
+    "room": "ops"
+  },
+  {
+    "name": "UNFINITUM",
+    "kind": "channel",
+    "status": "live",
+    "tagline": "daily projects, code & papers",
+    "desc": "A Telegram channel where I post what I'm building and reading every day. It's also the umbrella for the NAME-00X subsystems, including UNFINITUM Bot, UNFINITUM AI and EFFERENT-008.",
+    "tags": ["telegram", "build in public"],
+    "links": [],
+    "room": "both"
+  }
+]
