@@ -24,7 +24,7 @@ const {
 } = Astro.props;
 const canonical = new URL(Astro.url.pathname, Astro.site);
 const person = {
-  '@context': 'https://schema.org', '@type': 'Person', name: profile.name, url: 'https://imatin.dev', jobTitle: 'Neuroengineer',
+  '@context': 'https://schema.org', '@type': 'Person', '@id': 'https://imatin.dev/#matin', name: profile.name, url: 'https://imatin.dev/', jobTitle: 'Neuroengineer',
   ...(profile.email ? { email: `mailto:${profile.email}` } : {}),
   sameAs: ['https://imatin.dev', `https://github.com/${profile.github}`, profile.scholar, profile.orcid, profile.telegram?.channel && `https://t.me/${profile.telegram.channel}`].filter(Boolean),
 };
